@@ -1,0 +1,52 @@
+/* App.css */
+
+/* Resetting body margin and padding */
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Main app container */
+.app {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Content area */
+.content {
+  flex: 1;
+  padding: 20px;
+  /* Add padding to the content area */
+  background-color: #121212;
+  /* Dark background */
+  color: #fff;
+  overflow-y: auto;
+}
+
+/* Title styles */
+h1 {
+  text-align: center;
+  font-size: 24px;
+  margin: 0;
+  border-bottom: 1px solid #555;
+  /* Thin dark gray line */
+  padding-bottom: 10px;
+  /* Space between text and line */
+}
+
+/* Collection title styles */
+.collection-title {
+  margin-top: 20px;
+  font-size: 20px;
+}
+
+/* Additional reset for components */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}

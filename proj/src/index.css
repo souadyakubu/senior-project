@@ -1,0 +1,48 @@
+.library {
+  padding: 20px;
+}
+
+.search-bar {
+  padding: 10px;
+  border-radius: 5px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px;
+}
+
+.book-card {
+  cursor: pointer;
+}
+
+.book-cover {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.book-reader {
+  padding: 20px;
+}
+
+.chapter-navigation {
+  margin-top: 20px;
+}
+
+button {
+  padding: 10px;
+  margin: 0 5px;
+  border: none;
+  background-color: #444;
+  color: white;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
