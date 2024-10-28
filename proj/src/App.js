@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { auth, logoutUser } from './services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import Sidebar from './components/Sidebar';
 import BookSection from './components/BookSection';
 import BookReader from './components/BookReader';
@@ -9,33 +11,88 @@ import Signup from './components/Signup';
 import './App.css';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Manage login state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setIsLoggedIn(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Router>
       <div className="app">
         {isLoggedIn ? (
           <>
+            <div style={styles.logoutContainer}>
+              <button onClick={handleLogout} style={styles.logoutButton}>
+                Logout
+              </button>
+            </div>
             <Sidebar />
             <div className="content">
-              <h1>Home</h1>
-              <BookSection title="The Collection" books={books} />
               <Routes>
+                <Route 
+                  path="/" 
+                  element={
+                    <>
+                      <h1>Home</h1>
+                      <BookSection title="The Collection" books={books} />
+                    </>
+                  } 
+                />
                 <Route path="/book/:bookTitle" element={<BookReader />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
           </>
         ) : (
-          // Render login and signup pages if not logged in
           <Routes>
+            <Route path="/signup" element={<Signup />} />
             <Route path="/" element={<Login onLogin={() => setIsLoggedIn(true)} />} />
-            <Route path="/signup" element={<Signup />} /> {/* Change 'component' to 'element' */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         )}
       </div>
     </Router>
   );
 }
+
+const styles = {
+  logoutContainer: {
+    position: 'fixed',
+    top: '20px',
+    right: '20px',
+    zIndex: 1000,
+  },
+  logoutButton: {
+    padding: '8px 16px',
+    backgroundColor: '#1e1e1e',
+    color: '#fff',
+    border: '1px solid #444',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'all 0.3s ease',
+  }
+};
 
 export default App;
 
