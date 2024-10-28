@@ -1,41 +1,77 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate from react-router-dom
+import { Link, useNavigate } from 'react-router-dom';
+import { registerWithEmailAndPassword } from '../services/firebase';
+import { updateProfile } from 'firebase/auth';
+import { auth } from '../services/firebase';
 
 const SignUp = () => {
-    const navigate = useNavigate(); // Initialize useNavigate
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState(''); // State for confirm password
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState(''); // Add error state
+    const [isLoading, setIsLoading] = useState(false); // Add loading state
 
-    const handleSignUp = () => {
-        if (username && email && password && confirmPassword) {
-            if (password !== confirmPassword) {
-                alert("Passwords do not match.");
+    const handleSignUp = async () => {
+        // Reset error state
+        setError('');
+
+        // Validate inputs
+        if (!username || !email || !password || !confirmPassword) {
+            setError('Please fill in all fields.');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+
+        if (password.length < 6) {
+            setError('Password should be at least 6 characters long.');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            
+            // Register user with Firebase
+            const { user, error: registerError } = await registerWithEmailAndPassword(email, password);
+            
+            if (registerError) {
+                setError(registerError);
                 return;
             }
-            // Replace this with actual sign-up logic (e.g., API call)
-            alert('Sign up successful!'); // Placeholder for success message
-            navigate('/'); // Navigate back to login page after successful sign-up
-        } else {
-            alert('Please fill in all fields.');
-        }
-    };
 
-    const handleLoginRedirect = () => {
-        navigate('/'); // Use navigate to go back to the login page
+            if (user) {
+                // Update user profile with username
+                await updateProfile(auth.currentUser, {
+                    displayName: username
+                });
+
+                // Navigate to home page after successful registration
+                navigate('/');
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
         <div style={styles.wrapper}>
             <div style={styles.container}>
                 <h2 style={styles.title}>Sign Up</h2>
+                {error && <div style={styles.error}>{error}</div>}
                 <input
                     type="text"
                     placeholder="Username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
                 <input
                     type="email"
@@ -43,6 +79,7 @@ const SignUp = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
                 <input
                     type="password"
@@ -50,30 +87,51 @@ const SignUp = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
                 <input
                     type="password"
-                    placeholder="Confirm Password" // Added confirm password field
+                    placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
-                <button onClick={handleSignUp} style={styles.button}>
-                    Sign Up
+                <button 
+                    onClick={handleSignUp} 
+                    style={{
+                        ...styles.button,
+                        opacity: isLoading ? 0.7 : 1,
+                        cursor: isLoading ? 'not-allowed' : 'pointer'
+                    }}
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Signing up...' : 'Sign Up'}
                 </button>
                 <p style={styles.text}>
                     Already have an account?{' '}
-                    <span onClick={handleLoginRedirect} style={styles.link}>
+                    <Link to="/" style={styles.link}>
                         Log in
-                    </span>
+                    </Link>
                 </p>
             </div>
         </div>
     );
 };
 
-// Styles in JavaScript
+// Keep existing styles and add new ones
 const styles = {
+    // ... (keep all existing styles)
+    error: {
+        color: '#ff4444',
+        backgroundColor: 'rgba(255, 68, 68, 0.1)',
+        padding: '10px',
+        borderRadius: '5px',
+        marginBottom: '15px',
+        width: '100%',
+        textAlign: 'center',
+    },
+    // ... (rest of your existing styles)
     wrapper: {
         display: 'flex',
         justifyContent: 'center',
