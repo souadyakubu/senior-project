@@ -1,14 +1,13 @@
-// src/components/BookReader.js
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import books from './Books'; // Adjust the import path as needed
+import books from './Books';
 
 const BookReader = () => {
-    const { bookTitle } = useParams(); // Get the book title from the URL parameters
-    const book = books.find(b => b.title === decodeURIComponent(bookTitle)); // Find the selected book
+    const { bookTitle } = useParams();
+    const book = books.find(b => b.title === decodeURIComponent(bookTitle));
 
     if (!book) {
-        return <h2>Book not found</h2>; // Handle case when book is not found
+        return <h2>Book not found</h2>;
     }
 
     return (
@@ -16,7 +15,7 @@ const BookReader = () => {
             <h2>{book.title}</h2>
             <p><strong>Author:</strong> {book.author}</p>
             <iframe
-                src={book.link} // Use the link to display the book content
+                src={book.link}
                 title={book.title}
                 width="100%"
                 height="600px"

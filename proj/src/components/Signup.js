@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate from react-router-dom
+import { useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
-    const navigate = useNavigate(); // Initialize useNavigate
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState(''); // State for confirm password
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     const handleSignUp = () => {
         if (username && email && password && confirmPassword) {
@@ -14,16 +14,16 @@ const SignUp = () => {
                 alert("Passwords do not match.");
                 return;
             }
-            // Replace this with actual sign-up logic (e.g., API call)
-            alert('Sign up successful!'); // Placeholder for success message
-            navigate('/'); // Navigate back to login page after successful sign-up
+
+            alert('Sign up successful!');
+            navigate('/');
         } else {
             alert('Please fill in all fields.');
         }
     };
 
     const handleLoginRedirect = () => {
-        navigate('/'); // Use navigate to go back to the login page
+        navigate('/');
     };
 
     return (
@@ -53,7 +53,7 @@ const SignUp = () => {
                 />
                 <input
                     type="password"
-                    placeholder="Confirm Password" // Added confirm password field
+                    placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     style={styles.input}
@@ -72,7 +72,7 @@ const SignUp = () => {
     );
 };
 
-// Styles in JavaScript
+
 const styles = {
     wrapper: {
         display: 'flex',
