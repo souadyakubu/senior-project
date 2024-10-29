@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate from react-router-dom
+import { useNavigate } from 'react-router-dom';
 
 const Login = ({ onLogin }) => {
-    const navigate = useNavigate(); // Initialize useNavigate
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     const handleLogin = () => {
         if (email && password) {
-            onLogin(); // Call the onLogin function passed as a prop
+            onLogin();
         } else {
             alert('Please fill in both email and password.');
         }
     };
 
     const handleSignUp = () => {
-        navigate('/signup'); // Use navigate for routing to the signup page
+        navigate('/signup');
     };
 
     return (

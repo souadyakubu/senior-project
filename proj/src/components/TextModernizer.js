@@ -1,4 +1,3 @@
-// src/components/TextModernizer.js
 import React, { useState } from "react";
 
 const TextModernizer = ({ modernizeText }) => {
@@ -6,7 +5,7 @@ const TextModernizer = ({ modernizeText }) => {
     const [modernizedText, setModernizedText] = useState("");
 
     const handleSubmit = async () => {
-        const result = await modernizeText(text); // This will call the Firebase function or external API
+        const result = await modernizeText(text);
         setModernizedText(result);
     };
 
