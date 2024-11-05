@@ -1,4 +1,3 @@
-// src/components/Library.js
 import React from 'react';
 
 const Library = ({ books, onSelectBook }) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { saveBookProgress } from './services/firebase'; // Import saveBookProgress
-import { db } from './services/firebase'; // Firebase instance
+import { saveBookProgress } from './services/firebase';
+import { db } from './services/firebase';
 import { getDocs, collection } from "firebase/firestore";
 
 const HomePage = () => {
@@ -10,7 +10,7 @@ const HomePage = () => {
     const [chapter, setChapter] = useState(1);
     const [page, setPage] = useState(1);
 
-    // Fetch books from Firebase (adjust collection path as needed)
+
     useEffect(() => {
         const fetchBooks = async () => {
             const bookCollection = collection(db, "books");
@@ -27,17 +27,17 @@ const HomePage = () => {
         book.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Handle book selection
+
     const handleBookSelect = (book) => {
         setSelectedBook(book);
         setChapter(1); // Reset chapter to 1
         setPage(1); // Reset page to 1
     };
 
-    // Save book progress
+
     const handleSaveProgress = async () => {
-        const userId = "user123"; // Example user ID
-        const bookId = selectedBook.id; // Assuming books have an id field
+        const userId = "user123";
+        const bookId = selectedBook.id;
         await saveBookProgress(userId, bookId, chapter, page);
         alert("Progress saved!");
     };
@@ -46,7 +46,7 @@ const HomePage = () => {
         <div className="container mx-auto p-4">
             <h1 className="text-3xl font-bold text-center mb-6">Welcome to Your Christian Library</h1>
 
-            {/* Search bar */}
+
             <div className="mb-6">
                 <input
                     type="text"
@@ -57,7 +57,7 @@ const HomePage = () => {
                 />
             </div>
 
-            {/* Books Library */}
+
             <div className="mb-6">
                 <h2 className="text-2xl font-semibold mb-4">Books Available</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -74,7 +74,7 @@ const HomePage = () => {
                 </div>
             </div>
 
-            {/* Book Reading Interface */}
+
             {selectedBook && (
                 <div>
                     <h2 className="text-2xl font-semibold mb-4">{selectedBook.title}</h2>
