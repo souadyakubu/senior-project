@@ -1,16 +1,39 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { loginWithEmailAndPassword } from '../services/firebase';
 
 const Login = ({ onLogin }) => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = () => {
-        if (email && password) {
-            onLogin();
-        } else {
-            alert('Please fill in both email and password.');
+    const handleLogin = async () => {
+        if (!email || !password) {
+            setError('Please fill in all fields.');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            setError('');
+
+            const { user, error: loginError } = await loginWithEmailAndPassword(email, password);
+
+            if (loginError) {
+                setError(loginError);
+                return;
+            }
+
+            if (user) {
+                onLogin();
+                navigate('/');
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -22,12 +45,14 @@ const Login = ({ onLogin }) => {
         <div style={styles.wrapper}>
             <div style={styles.container}>
                 <h2 style={styles.title}>Login</h2>
+                {error && <div style={styles.error}>{error}</div>}
                 <input
                     type="email"
                     placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
                 <input
                     type="password"
@@ -35,15 +60,24 @@ const Login = ({ onLogin }) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
-                <button onClick={handleLogin} style={styles.button}>
-                    Login
+                <button
+                    onClick={handleLogin}
+                    style={{
+                        ...styles.button,
+                        opacity: isLoading ? 0.7 : 1,
+                        cursor: isLoading ? 'not-allowed' : 'pointer'
+                    }}
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Logging in...' : 'Login'}
                 </button>
                 <p style={styles.text}>
                     Don't have an account?{' '}
-                    <span onClick={handleSignUp} style={styles.link}>
+                    <Link to="/signup" style={styles.link}>
                         Sign up
-                    </span>
+                    </Link>
                 </p>
             </div>
         </div>
@@ -105,6 +139,15 @@ const styles = {
         cursor: 'pointer',
         textDecoration: 'underline',
     },
+    error: {
+        color: '#ff4444',
+        backgroundColor: 'rgba(255, 68, 68, 0.1)',
+        padding: '10px',
+        borderRadius: '5px',
+        marginBottom: '15px',
+        width: '100%',
+        textAlign: 'center',
+    }
 };
 
 export default Login;

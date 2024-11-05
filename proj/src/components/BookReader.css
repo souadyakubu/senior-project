@@ -1,68 +1,108 @@
 .book-reader {
-    font-family: Arial, sans-serif;
-    color: #fff;
-    padding: 20px;
-    background-color: #222;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  color: #fff;
+  background-color: #222;
+  font-family: Arial, sans-serif;
+}
+
+.book-content {
+  line-height: 1.6;
+  font-size: 18px;
+  padding: 20px;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  color: #fff;
+  white-space: pre-wrap;
+  margin-top: 20px;
+}
+
+.highlighted-text {
+  background-color: rgba(255, 255, 0, 0.3);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.highlighted-text:hover {
+  background-color: rgba(255, 255, 0, 0.5);
+}
+
+.error-message {
+  color: #ff4444;
+  background-color: rgba(255, 68, 68, 0.1);
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+h1 {
+  text-align: center;
+  color: #fff;
+  margin-bottom: 20px;
 }
 
 .chapter-selection {
-    margin-top: 20px;
+  margin-top: 20px;
 }
 
 .chapter-selection h3 {
-    margin-bottom: 10px;
-    font-size: 1.4em;
+  margin-bottom: 10px;
+  font-size: 1.4em;
 }
 
 .chapter-selection select {
-    padding: 8px;
-    margin-bottom: 20px;
-    font-size: 1em;
-    border-radius: 5px;
-    border: none;
+  padding: 8px;
+  margin-bottom: 20px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: none;
+  background-color: #333;
+  color: #fff;
 }
 
 .chapter-questions h4 {
-    font-size: 1.2em;
-    margin-bottom: 10px;
+  font-size: 1.2em;
+  margin-bottom: 10px;
 }
 
 .chapter-questions ul {
-    list-style-type: none;
-    padding: 0;
+  list-style-type: none;
+  padding: 0;
 }
 
 .chapter-questions li {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 
 .chapter-questions li p {
-    font-size: 1em;
-    margin-bottom: 8px;
+  font-size: 1em;
+  margin-bottom: 8px;
 }
 
 .chapter-questions input[type="text"] {
-    width: 70%;
-    padding: 10px;
-    font-size: 1em;
-    border-radius: 5px;
-    border: none;
-    margin-right: 10px;
-    background-color: #333;
-    color: #fff;
+  width: 70%;
+  padding: 10px;
+  font-size: 1em;
+  border-radius: 5px;
+  border: none;
+  margin-right: 10px;
+  background-color: #333;
+  color: #fff;
 }
 
 .chapter-questions button {
-    padding: 10px 15px;
-    font-size: 1em;
-    border-radius: 5px;
-    background-color: #444;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s;
+  padding: 10px 15px;
+  font-size: 1em;
+  border-radius: 5px;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
 }
 
 .chapter-questions button:hover {
-    background-color: #555;
+  background-color: #555;
 }

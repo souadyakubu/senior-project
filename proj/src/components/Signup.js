@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { registerWithEmailAndPassword } from '../services/firebase';
+import { updateProfile } from 'firebase/auth';
+import { auth } from '../services/firebase';
 
 const SignUp = () => {
     const navigate = useNavigate();
@@ -7,35 +10,64 @@ const SignUp = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSignUp = () => {
-        if (username && email && password && confirmPassword) {
-            if (password !== confirmPassword) {
-                alert("Passwords do not match.");
+    const handleSignUp = async () => {
+        setError('');
+
+        // Validate inputs
+        if (!username || !email || !password || !confirmPassword) {
+            setError('Please fill in all fields.');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+
+        if (password.length < 6) {
+            setError('Password should be at least 6 characters long.');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+
+            const { user, error: registerError } = await registerWithEmailAndPassword(email, password);
+
+            if (registerError) {
+                setError(registerError);
                 return;
             }
 
-            alert('Sign up successful!');
-            navigate('/');
-        } else {
-            alert('Please fill in all fields.');
-        }
-    };
+            if (user) {
+                await updateProfile(auth.currentUser, {
+                    displayName: username,
+                });
 
-    const handleLoginRedirect = () => {
-        navigate('/');
+                navigate('/');
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
         <div style={styles.wrapper}>
             <div style={styles.container}>
                 <h2 style={styles.title}>Sign Up</h2>
+                {error && <div style={styles.error}>{error}</div>}
                 <input
                     type="text"
                     placeholder="Username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
                 <input
                     type="email"
@@ -43,6 +75,7 @@ const SignUp = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
                 <input
                     type="password"
@@ -50,6 +83,7 @@ const SignUp = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
                 <input
                     type="password"
@@ -57,21 +91,29 @@ const SignUp = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     style={styles.input}
+                    disabled={isLoading}
                 />
-                <button onClick={handleSignUp} style={styles.button}>
-                    Sign Up
+                <button
+                    onClick={handleSignUp}
+                    style={{
+                        ...styles.button,
+                        opacity: isLoading ? 0.7 : 1,
+                        cursor: isLoading ? 'not-allowed' : 'pointer'
+                    }}
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Signing up...' : 'Sign Up'}
                 </button>
                 <p style={styles.text}>
                     Already have an account?{' '}
-                    <span onClick={handleLoginRedirect} style={styles.link}>
+                    <Link to="/" style={styles.link}>
                         Log in
-                    </span>
+                    </Link>
                 </p>
             </div>
         </div>
     );
 };
-
 
 const styles = {
     wrapper: {
@@ -127,6 +169,15 @@ const styles = {
         color: '#007bff',
         cursor: 'pointer',
         textDecoration: 'underline',
+    },
+    error: {
+        color: '#ff4444',
+        backgroundColor: 'rgba(255, 68, 68, 0.1)',
+        padding: '10px',
+        borderRadius: '5px',
+        marginBottom: '15px',
+        width: '100%',
+        textAlign: 'center',
     },
 };
 
