@@ -10,11 +10,10 @@ const SignUp = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState(''); // Add error state
-    const [isLoading, setIsLoading] = useState(false); // Add loading state
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSignUp = async () => {
-        // Reset error state
         setError('');
 
         // Validate inputs
@@ -35,22 +34,19 @@ const SignUp = () => {
 
         try {
             setIsLoading(true);
-            
-            // Register user with Firebase
+
             const { user, error: registerError } = await registerWithEmailAndPassword(email, password);
-            
+
             if (registerError) {
                 setError(registerError);
                 return;
             }
 
             if (user) {
-                // Update user profile with username
                 await updateProfile(auth.currentUser, {
-                    displayName: username
+                    displayName: username,
                 });
 
-                // Navigate to home page after successful registration
                 navigate('/');
             }
         } catch (err) {
@@ -97,8 +93,8 @@ const SignUp = () => {
                     style={styles.input}
                     disabled={isLoading}
                 />
-                <button 
-                    onClick={handleSignUp} 
+                <button
+                    onClick={handleSignUp}
                     style={{
                         ...styles.button,
                         opacity: isLoading ? 0.7 : 1,
@@ -119,19 +115,7 @@ const SignUp = () => {
     );
 };
 
-// Keep existing styles and add new ones
 const styles = {
-    // ... (keep all existing styles)
-    error: {
-        color: '#ff4444',
-        backgroundColor: 'rgba(255, 68, 68, 0.1)',
-        padding: '10px',
-        borderRadius: '5px',
-        marginBottom: '15px',
-        width: '100%',
-        textAlign: 'center',
-    },
-    // ... (rest of your existing styles)
     wrapper: {
         display: 'flex',
         justifyContent: 'center',
@@ -185,6 +169,15 @@ const styles = {
         color: '#007bff',
         cursor: 'pointer',
         textDecoration: 'underline',
+    },
+    error: {
+        color: '#ff4444',
+        backgroundColor: 'rgba(255, 68, 68, 0.1)',
+        padding: '10px',
+        borderRadius: '5px',
+        marginBottom: '15px',
+        width: '100%',
+        textAlign: 'center',
     },
 };
 
