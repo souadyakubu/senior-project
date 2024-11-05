@@ -14,9 +14,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "clean": "rm -rf node_modules .cache dist",
+    "reinstall": "npm run clean && npm install"
   },
   "eslintConfig": {
     "extends": [
