@@ -1,4 +1,3 @@
-// src/components/Quiz.js
 import React, { useState } from "react";
 
 const Quiz = ({ quizData }) => {
@@ -7,7 +6,7 @@ const Quiz = ({ quizData }) => {
 
     const handleSubmit = () => {
         setSubmitted(true);
-        // Add logic to evaluate the answers here
+
     };
 
     return (
