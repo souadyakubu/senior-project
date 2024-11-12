@@ -1,19 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import axios from 'axios';
 import books from './Books';
 import './BookReader.css';
 
 const BookReader = () => {
     const { bookTitle } = useParams();
     const book = books.find(b => b.title === decodeURIComponent(bookTitle));
-
+    const [content, setContent] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [currentSection, setCurrentSection] = useState('i');
+    const [hasNextSection, setHasNextSection] = useState(true);
     const [selectedChapter, setSelectedChapter] = useState('');
     const [userAnswers, setUserAnswers] = useState({});
 
-    if (!book) {
-        return <h2>Book not found</h2>;
-    }
+    // Array of CCEL's section identifiers
+    const sections = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+    
+    const loadContent = async (section) => {
+        if (!book?.link) return;
 
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Construct URL based on CCEL's structure
+            const baseUrl = book.link.split('practice.')[0];
+            const pageUrl = `${baseUrl}practice.${section}.html`;
+            
+            console.log('Fetching URL:', pageUrl);
+
+            const response = await axios.get(`http://localhost:3001/api/fetch-content?url=${encodeURIComponent(pageUrl)}`);
+            
+            if (response.data.error) {
+                console.log('Error response:', response.data.error);
+                if (response.data.error.includes('404')) {
+                    setHasNextSection(false);
+                } else {
+                    setError(response.data.error);
+                }
+                return;
+            }
+
+            if (response.data.content) {
+                setContent(response.data.content);
+                // Check if next section exists
+                const nextSectionIndex = sections.indexOf(section) + 1;
+                setHasNextSection(nextSectionIndex < sections.length);
+            }
+        } catch (err) {
+            console.error('Error loading content:', err);
+            if (err.response?.status === 404) {
+                setHasNextSection(false);
+            } else {
+                setError('Failed to load content. Please try again later.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadContent(currentSection);
+    }, [currentSection, book]);
+
+    const handleNextSection = () => {
+        const currentIndex = sections.indexOf(currentSection);
+        if (currentIndex < sections.length - 1) {
+            const nextSection = sections[currentIndex + 1];
+            setCurrentSection(nextSection);
+            window.scrollTo(0, 0);
+        }
+    };
+
+    const handlePreviousSection = () => {
+        const currentIndex = sections.indexOf(currentSection);
+        if (currentIndex > 0) {
+            const prevSection = sections[currentIndex - 1];
+            setCurrentSection(prevSection);
+            window.scrollTo(0, 0);
+        }
+    };
+
+    // Quiz functionality
     const chapters = [
         { id: '1', title: 'Chapter 1' },
         { id: '2', title: 'Chapter 2' },
@@ -49,17 +119,74 @@ const BookReader = () => {
         return userAnswers[index] && userAnswers[index].toLowerCase() === correctAnswer.toLowerCase();
     };
 
+    if (!book) {
+        return <h2>Book not found</h2>;
+    }
+
     return (
         <div className="book-reader">
-            <h2>{book.title}</h2>
-            <p><strong>Author:</strong> {book.author}</p>
-            <iframe
-                src={book.link}
-                title={book.title}
-                width="100%"
-                height="600px"
-                style={{ border: 'none' }}
-            />
+            <div className="book-header">
+                <h2>{book.title}</h2>
+                <p><strong>Author:</strong> {book.author}</p>
+            </div>
+
+            <div className="navigation-controls">
+                <button 
+                    onClick={handlePreviousSection}
+                    disabled={sections.indexOf(currentSection) === 0 || loading}
+                    className="nav-button"
+                >
+                    Previous Section
+                </button>
+                <span className="page-indicator">Section {currentSection.toUpperCase()}</span>
+                <button 
+                    onClick={handleNextSection}
+                    disabled={!hasNextSection || loading}
+                    className="nav-button"
+                >
+                    Next Section
+                </button>
+            </div>
+
+            {loading && (
+                <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Loading content...</p>
+                </div>
+            )}
+
+            {error && (
+                <div className="error-message">
+                    {error}
+                </div>
+            )}
+
+            {!loading && !error && content && (
+                <div className="book-content">
+                    <div 
+                        className="content-container"
+                        dangerouslySetInnerHTML={{ __html: content }}
+                    />
+                </div>
+            )}
+
+            <div className="navigation-controls bottom">
+                <button 
+                    onClick={handlePreviousSection}
+                    disabled={sections.indexOf(currentSection) === 0 || loading}
+                    className="nav-button"
+                >
+                    Previous Section
+                </button>
+                <span className="page-indicator">Section {currentSection.toUpperCase()}</span>
+                <button 
+                    onClick={handleNextSection}
+                    disabled={!hasNextSection || loading}
+                    className="nav-button"
+                >
+                    Next Section
+                </button>
+            </div>
 
             <div className="chapter-selection">
                 <h3>Select a Chapter</h3>
@@ -72,7 +199,6 @@ const BookReader = () => {
 
                 {selectedChapter && (
                     <div className="chapter-questions">
-
                         <ul>
                             {chapterQuestions[selectedChapter].map((item, index) => (
                                 <li key={index}>
@@ -97,73 +223,3 @@ const BookReader = () => {
 };
 
 export default BookReader;
-
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import { useParams } from 'react-router-dom';
-// import books from './Books';
-// import './BookReader.css';
-
-// const BookReader = () => {
-//     const { bookTitle } = useParams();
-//     const book = books.find(b => b.title === decodeURIComponent(bookTitle));
-//     const [chapter, setChapter] = useState(1);
-//     const [scriptureContent, setScriptureContent] = useState('');
-//     const version = 'kjv'; // Default version, you can make this dynamic if needed
-
-//     if (!book) {
-//         return <h2>Book not found</h2>;
-//     }
-
-//     // Fetch the scripture content from CCEL API based on the selected chapter
-//     const fetchScripture = async () => {
-//         const passage = `${book.scriptureReference}_${chapter}`;
-//         const url = `https://ccel.org/ajax/scripture?version=${version}&passage=${passage}`;
-
-//         try {
-//             const response = await fetch(url);
-//             if (!response.ok) {
-//                 throw new Error('Failed to fetch scripture');
-//             }
-//             const html = await response.text();
-//             setScriptureContent(html);
-//         } catch (error) {
-//             console.error("Error fetching scripture:", error);
-//         }
-//     };
-
-//     // Fetch scripture content whenever the chapter changes
-//     useEffect(() => {
-//         fetchScripture();
-//     }, [chapter]);
-
-//     return (
-//         <div className="book-reader">
-//             <h2>{book.title}</h2>
-//             <p><strong>Author:</strong> {book.author}</p>
-
-//             {/* Chapter selection */}
-//             <div>
-//                 <label htmlFor="chapterSelect">Select a Chapter: </label>
-//                 <select
-//                     id="chapterSelect"
-//                     value={chapter}
-//                     onChange={(e) => setChapter(parseInt(e.target.value))}
-//                 >
-//                     {Array.from({ length: book.totalChapters }, (_, i) => (
-//                         <option key={i + 1} value={i + 1}>
-//                             Chapter {i + 1}
-//                         </option>
-//                     ))}
-//                 </select>
-//             </div>
-
-//             {/* Display fetched scripture content */}
-//             <div className="scripture-content" dangerouslySetInnerHTML={{ __html: scriptureContent }} />
-//         </div>
-//     );
-// };
-
-// export default BookReader;
