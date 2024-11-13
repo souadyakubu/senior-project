@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import books from './Books';
 import './BookReader.css';
+import claudeService from '../services/claudeService';
+
 
 const BookReader = () => {
     const { bookTitle } = useParams();
@@ -14,6 +16,8 @@ const BookReader = () => {
     const [hasNextSection, setHasNextSection] = useState(true);
     const [selectedChapter, setSelectedChapter] = useState('');
     const [userAnswers, setUserAnswers] = useState({});
+    const [modernizedText, setModernizedText] = useState('');
+    const [isModernizing, setIsModernizing] = useState(false);
 
     // Array of CCEL's section identifiers
     const sections = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
@@ -83,6 +87,17 @@ const BookReader = () => {
         }
     };
 
+    const logSelectedText = () => {
+        const selectedText = window.getSelection().toString().trim();
+        if (selectedText) {
+            console.log('Selected Text:', selectedText);
+        } else {
+            console.log('No text currently selected');
+        }
+    };
+
+    
+
     // Quiz functionality
     const chapters = [
         { id: '1', title: 'Chapter 1' },
@@ -145,6 +160,12 @@ const BookReader = () => {
                     className="nav-button"
                 >
                     Next Section
+                </button>
+                <button 
+                    onClick={logSelectedText}
+                    className="nav-button"
+                >
+                    Log Selected Text
                 </button>
             </div>
 
