@@ -155,3 +155,100 @@
   color: #e0e0e0;
   font-size: 16px;
 }
+
+.book-reader-container {
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.book-reader {
+  flex: 1;
+  transition: width 0.3s ease;
+  padding: 20px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.book-reader.with-panel {
+  width: calc(100% - 400px);
+  transition: width 0.3s ease;
+}
+
+.modernized-panel {
+  position: fixed;
+  right: -400px;
+  top: 0;
+  width: 400px;
+  height: 100vh;
+  background: white;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s ease;
+  z-index: 1000;
+}
+
+.modernized-panel.open {
+  right: 0;
+}
+
+.panel-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-content {
+  padding: 20px;
+  height: calc(100% - 60px);
+  overflow-y: auto;
+}
+
+.close-panel-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 50%;
+  color: #666;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.close-panel-button:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.placeholder-text {
+  color: #666;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.modernize-button {
+  background-color: #4a90e2;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.modernize-button.active {
+  background-color: #357abd;
+}
+
+.modernize-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.modernize-button:hover:not(:disabled) {
+  background-color: #357abd;
+}
