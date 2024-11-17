@@ -3,6 +3,9 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import books from './Books';
 import './BookReader.css';
+//import ClaudeService from '../services/claudeService';
+import OpenAIService from '../services/openAIService';
+
 
 const BookReader = () => {
     const { bookTitle } = useParams();
@@ -15,7 +18,10 @@ const BookReader = () => {
     const [selectedChapter, setSelectedChapter] = useState('');
     const [userAnswers, setUserAnswers] = useState({});
     const [isPanelOpen, setIsPanelOpen] = useState(false);
+    const [isModernizing, setIsModernizing] = useState(false);
     const [modernizedContent, setModernizedContent] = useState('');
+    //const claudeService = new ClaudeService(process.env.REACT_APP_ANTHROPIC_API_KEY);
+    const openAIService = new OpenAIService(process.env.REACT_APP_OPENAI_API_KEY);
     
     
 
@@ -125,11 +131,33 @@ const BookReader = () => {
 
     const togglePanel = () => {
         setIsPanelOpen(!isPanelOpen);
+        if (!isPanelOpen && !modernizedContent && !isModernizing) {
+            handleModernizeText();
+        }
     };
 
     if (!book) {
         return <h2>Book not found</h2>;
     }
+
+    const handleModernizeText = async () => {
+        try {
+            setIsModernizing(true);
+            // Get the text content from your content state
+            // You might need to adjust this depending on how your content is structured
+            const textToModernize = content.replace(/<[^>]+>/g, ''); // Remove HTML tags
+            
+            //const modernizedText = await claudeService.modernizeText(textToModernize);
+            const modernizedText = await openAIService.modernizeText(textToModernize);  // Updated service call
+            
+            setModernizedContent(modernizedText);
+        } catch (error) {
+            console.error('Error modernizing text:', error);
+            setError('Failed to modernize text. Please try again.');
+        } finally {
+            setIsModernizing(false);
+        }
+    };
 
     return (
         <div className="book-reader-container">
@@ -237,26 +265,34 @@ const BookReader = () => {
     
             {/* Modernized Panel - Moved outside the main content area */}
             <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
-    <div className="panel-header">
-        <h3>Modern Translation</h3>
-        <button 
-            onClick={togglePanel}
-            className="close-panel-button"
-            aria-label="Close panel"
-        >
-            ×
-        </button>
-    </div>
-    <div className="panel-content">
-        {modernizedContent || 
-            <div className="placeholder-text">
-                Click "Modernize" to see the modern translation of the text.
+            <div className="panel-header">
+                <h3>Modern Translation</h3>
+                <button 
+                    onClick={togglePanel}
+                    className="close-panel-button"
+                    aria-label="Close panel"
+                >
+                    ×
+                </button>
             </div>
-        }
-    </div>
-</div>
+            <div className="panel-content">
+                {isModernizing ? (
+                    <div className="loading-container">
+                        <div className="loading-spinner"></div>
+                        <p>Modernizing text...</p>
+                    </div>
+                ) : modernizedContent ? (
+                    <div className="modernized-text">
+                        {modernizedContent}
+                    </div>
+                ) : (
+                    <div className="placeholder-text">
+                        Click "Modernize" to see the modern translation of the text.
+                    </div>
+                )}
+            </div>
+        </div>
         </div>
     );
 };
 export default BookReader;
- 
