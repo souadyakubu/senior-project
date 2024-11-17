@@ -2,17 +2,23 @@ import Anthropic from '@anthropic-ai/sdk';
 
 class ClaudeService {
     constructor(apiKey) {
+        if (!apiKey) {
+            throw new Error('API key is required');
+        }
         this.anthropic = new Anthropic({
             apiKey: apiKey,
-            dangerouslyAllowBrowser: true  //MAKE SURE THAT THIS IS GONE WHEN WE RELEASE THE APP. IF THIS IS RELEASED PEOPLE CAN STEAL THE KEY
-                                           //FIND SOME WAY TO PUT THIS INTO A BACKEND SERVICE FOR REQUESTS!
+            dangerouslyAllowBrowser: true
         });
     }
 
     async modernizeText(text) {
         try {
+            if (!text || typeof text !== 'string') {
+                throw new Error('Invalid text input');
+            }
+
             const response = await this.anthropic.messages.create({
-                model: "claude-3-opus-20240229",
+                model: "claude-3-sonnet-20240229",  // Updated to Claude 3.5 Sonnet
                 max_tokens: 1024,
                 messages: [{
                     role: "user",
@@ -20,10 +26,27 @@ class ClaudeService {
                 }]
             });
 
+            if (!response || !response.content || !response.content[0]) {
+                throw new Error('Invalid response from API');
+            }
+
             return response.content[0].text;
         } catch (error) {
-            console.error('Error modernizing text:', error);
-            throw new Error('Failed to modernize text');
+            console.error('Error details:', {
+                message: error.message,
+                status: error.status,
+                type: error.type
+            });
+            
+            if (error.status === 401) {
+                throw new Error('Authentication failed - please check your API key');
+            } else if (error.status === 429) {
+                throw new Error('Rate limit exceeded - please try again later');
+            } else if (error.type === 'invalid_request_error') {
+                throw new Error('Invalid request - please check your input');
+            }
+            
+            throw new Error(`Failed to modernize text: ${error.message}`);
         }
     }
 }
