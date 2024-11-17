@@ -13,6 +13,7 @@
     "express": "^4.21.1",
     "firebase": "^10.8.0",
     "jsdom": "^25.0.1",
+    "openai": "^4.72.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.1",
