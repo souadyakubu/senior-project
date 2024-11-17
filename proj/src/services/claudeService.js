@@ -1,46 +1,31 @@
-// src/services/claudeService.js
-import config from './config';
 import Anthropic from '@anthropic-ai/sdk';
 
 class ClaudeService {
-    constructor() {
+    constructor(apiKey) {
         this.anthropic = new Anthropic({
-            apiKey: config.claude.apiKey
+            apiKey: apiKey,
+            dangerouslyAllowBrowser: true  //MAKE SURE THAT THIS IS GONE WHEN WE RELEASE THE APP. IF THIS IS RELEASED PEOPLE CAN STEAL THE KEY
+                                           //FIND SOME WAY TO PUT THIS INTO A BACKEND SERVICE FOR REQUESTS!
         });
-        this.messageHistory = [];
     }
 
-    async askQuestion(selectedText, question) {
+    async modernizeText(text) {
         try {
-            // Add user message to history
-            this.messageHistory.push({
-                role: "user",
-                content: `Context from book: ${selectedText}\n\nQuestion: ${question}`
-            });
-
             const response = await this.anthropic.messages.create({
-                model: config.claude.model,
+                model: "claude-3-opus-20240229",
                 max_tokens: 1024,
-                messages: this.messageHistory
-            });
-
-            // Add Claude's response to history
-            this.messageHistory.push({
-                role: "assistant",
-                content: response.content[0].text
+                messages: [{
+                    role: "user",
+                    content: `Please modernize the following text while maintaining its meaning and theological accuracy. Make it more accessible to modern readers while preserving the core message: "${text}"`
+                }]
             });
 
             return response.content[0].text;
         } catch (error) {
-            console.error('Error in Claude service:', error);
-            throw error;
+            console.error('Error modernizing text:', error);
+            throw new Error('Failed to modernize text');
         }
-    }
-
-    clearHistory() {
-        this.messageHistory = [];
     }
 }
 
-const claudeService = new ClaudeService();
-export default claudeService;
+export default ClaudeService;
