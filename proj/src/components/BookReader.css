@@ -1,99 +1,59 @@
-.book-reader-container {
-  display: flex;
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-  background-color: #121212; /* Darker black background */
-}
-
 .book-reader {
-  flex: 1;
   padding: 20px;
-  overflow-y: auto;
-  transition: width 0.3s ease;
-  background-color: #121212;
-  color: #ffffff;
-  max-width: 1200px; /* Control maximum width */
-  margin: 0 auto; /* Center content */
-}
-
-.book-reader.with-panel {
-  width: calc(100% - 400px);
+  max-width: 800px;
+  margin: 0 auto;
+  color: #fff;
 }
 
 .book-header {
-  text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
   padding: 20px;
-  background-color: #1a1a1a; /* Slightly lighter than background for contrast */
-  border-radius: 4px;
+  background-color: #1e1e1e;
+  border-radius: 8px;
 }
 
 .book-header h2 {
-  margin: 0;
-  color: #ffffff;
-  font-size: 28px;
+  margin: 0 0 10px 0;
+  color: #fff;
 }
 
 .navigation-controls {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
   margin: 20px 0;
   padding: 10px;
-  background-color: #1a1a1a;
-  border-radius: 4px;
+  background-color: #1e1e1e;
+  border-radius: 8px;
 }
 
 .navigation-controls.bottom {
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
 .nav-button {
-  background-color: #2c5282; /* Dark blue color */
+  padding: 10px 20px;
+  background-color: #2c5282;
   color: white;
-  padding: 8px 16px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.nav-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
 .nav-button:hover:not(:disabled) {
-  background-color: #2b6cb0;
+  background-color: #3182ce;
 }
 
-.modernize-button {
-  background-color: #4a90e2;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-left: 16px;
-  transition: background-color 0.3s ease;
-}
-
-.modernize-button:hover:not(:disabled) {
-  background-color: #357abd;
-}
-
-.modernize-button:disabled {
-  background-color: #cccccc;
+.nav-button:disabled {
+  background-color: #1a365d;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .page-indicator {
-  padding: 8px 16px;
-  background-color: #000000;
-  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 16px;
 }
 
 .loading-container {
@@ -106,8 +66,8 @@
 }
 
 .loading-spinner {
-  border: 4px solid #333;
-  border-top: 4px solid #fff;
+  border: 4px solid #333;  /* Darker circle */
+  border-top: 4px solid #fff;  /* White spinning part */
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -121,86 +81,116 @@
 
 .error-message {
   padding: 15px;
-  background-color: #ffebee;
-  color: #c62828;
-  border-radius: 4px;
-  margin: 10px 0;
+  background-color: rgba(255, 68, 68, 0.1);
+  color: #ff4444;
+  border-radius: 8px;
+  margin: 20px 0;
+  text-align: center;
 }
 
 .book-content {
+  background-color: #1e1e1e;
+  padding: 30px;
+  border-radius: 8px;
   line-height: 1.6;
-  margin: 20px 0;
 }
 
 .content-container {
-  background-color: #1a1a1a;
-  padding: 30px;
-  border-radius: 4px;
-  margin: 20px 0;
-  line-height: 1.6;
-  color: #ffffff;
+  font-size: 18px;
+  color: #e0e0e0;
 }
 
-.chapter-selection {
+.content-container h1,
+.content-container h2,
+.content-container h3 {
+  color: #fff;
+  margin: 1em 0;
+}
+
+.content-container p {
+  margin: 1em 0;
+}
+
+.content-container a {
+  color: #4a9eff;
+  text-decoration: none;
+}
+
+.content-container a:hover {
+  text-decoration: underline;
+}
+
+.navigation-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+}
+
+.navigation-controls.bottom {
   margin-top: 30px;
 }
 
-.chapter-selection select {
-  width: 200px;
-  padding: 8px;
-  margin: 10px 0;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
-.chapter-questions {
-  margin-top: 20px;
-}
-
-.chapter-questions ul {
-  list-style: none;
-  padding: 0;
-}
-
-.chapter-questions li {
-  margin-bottom: 20px;
-}
-
-.chapter-questions input {
-  width: 100%;
-  padding: 8px;
-  margin: 8px 0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-.chapter-questions button {
-  padding: 8px 16px;
-  background-color: #4caf50;
+.nav-button {
+  padding: 10px 20px;
+  background-color: #2c5282;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.chapter-questions button:hover {
-  background-color: #45a049;
+.nav-button:hover:not(:disabled) {
+  background-color: #3182ce;
 }
 
-/* Modernized Panel Styles */
+.nav-button:disabled {
+  background-color: #1a365d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.page-indicator {
+  color: #e0e0e0;
+  font-size: 16px;
+}
+
+.book-reader-container {
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.book-reader {
+  flex: 1;
+  transition: width 0.3s ease;
+  padding: 20px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.book-reader.with-panel {
+  width: calc(100% - 400px);
+  transition: width 0.3s ease;
+}
+
 .modernized-panel {
   position: fixed;
   right: -400px;
   top: 0;
   width: 400px;
   height: 100vh;
-  background: #1a1a1a;
-  color: white;
+  background: #1a1a1a;  /* Dark background */
+  color: white;        /* White text */
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
   transition: right 0.3s ease;
   z-index: 1000;
-  display: flex;
-  flex-direction: column;
 }
 
 .modernized-panel.open {
@@ -209,16 +199,16 @@
 
 .panel-header {
   padding: 15px 20px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #333;  /* Darker border */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #1a1a1a;
+  background: #1a1a1a;  /* Match panel background */
 }
 
 .panel-content {
   padding: 20px;
-  flex: 1;
+  height: calc(100% - 60px);
   overflow-y: auto;
 }
 
@@ -229,45 +219,52 @@
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 50%;
-  color: #fff;
+  color: #fff;  /* White X button */
   transition: background-color 0.2s;
 }
 
 .close-panel-button:hover {
-  background-color: #333;
+  background-color: #333;  /* Darker hover state */
+}
+
+.placeholder-text {
+  color: #aaa;  /* Light grey for placeholder */
+  text-align: center;
+  margin-top: 20px;
+}
+
+.modernize-button {
+  background-color: #4a90e2;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.modernize-button.active {
+  background-color: #357abd;
+}
+
+.modernize-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.modernize-button:hover:not(:disabled) {
+  background-color: #357abd;
 }
 
 .modernized-text {
   white-space: pre-wrap;
   line-height: 1.6;
   padding: 20px;
-  color: white;
+  color: white;  /* Ensure text is white */
 }
 
-.placeholder-text {
-  color: #aaa;
-  text-align: center;
-  margin-top: 20px;
-}
-
-/* Optional: Add some responsive styles */
-@media (max-width: 768px) {
-  .book-reader.with-panel {
-      width: calc(100% - 300px);
-  }
-
-  .modernized-panel {
-      width: 300px;
-  }
-}
-
-@media (max-width: 480px) {
-  .navigation-controls {
-      flex-wrap: wrap;
-  }
-
-  .nav-button, .modernize-button {
-      flex: 1;
-      min-width: 120px;
-  }
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
