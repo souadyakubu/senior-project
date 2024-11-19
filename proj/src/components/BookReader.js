@@ -3,6 +3,9 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import books from './Books';
 import './BookReader.css';
+//import ClaudeService from '../services/claudeService';
+import OpenAIService from '../services/openAIService';
+
 
 const BookReader = () => {
     const { bookTitle } = useParams();
@@ -14,6 +17,13 @@ const BookReader = () => {
     const [hasNextSection, setHasNextSection] = useState(true);
     const [selectedChapter, setSelectedChapter] = useState('');
     const [userAnswers, setUserAnswers] = useState({});
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
+    const [isModernizing, setIsModernizing] = useState(false);
+    const [modernizedContent, setModernizedContent] = useState('');
+    //const claudeService = new ClaudeService(process.env.REACT_APP_ANTHROPIC_API_KEY);
+    const openAIService = new OpenAIService(process.env.REACT_APP_OPENAI_API_KEY);
+    
+    
 
     // Array of CCEL's section identifiers
     const sections = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
@@ -119,107 +129,170 @@ const BookReader = () => {
         return userAnswers[index] && userAnswers[index].toLowerCase() === correctAnswer.toLowerCase();
     };
 
+    const togglePanel = () => {
+        setIsPanelOpen(!isPanelOpen);
+        if (!isPanelOpen && !modernizedContent && !isModernizing) {
+            handleModernizeText();
+        }
+    };
+
     if (!book) {
         return <h2>Book not found</h2>;
     }
 
+    const handleModernizeText = async () => {
+        try {
+            setIsModernizing(true);
+            // Get the text content from your content state
+            // You might need to adjust this depending on how your content is structured
+            const textToModernize = content.replace(/<[^>]+>/g, ''); // Remove HTML tags
+            
+            //const modernizedText = await claudeService.modernizeText(textToModernize);
+            const modernizedText = await openAIService.modernizeText(textToModernize);  // Updated service call
+            
+            setModernizedContent(modernizedText);
+        } catch (error) {
+            console.error('Error modernizing text:', error);
+            setError('Failed to modernize text. Please try again.');
+        } finally {
+            setIsModernizing(false);
+        }
+    };
+
     return (
-        <div className="book-reader">
-            <div className="book-header">
-                <h2>{book.title}</h2>
-                <p><strong>Author:</strong> {book.author}</p>
-            </div>
-
-            <div className="navigation-controls">
-                <button 
-                    onClick={handlePreviousSection}
-                    disabled={sections.indexOf(currentSection) === 0 || loading}
-                    className="nav-button"
-                >
-                    Previous Section
-                </button>
-                <span className="page-indicator">Section {currentSection.toUpperCase()}</span>
-                <button 
-                    onClick={handleNextSection}
-                    disabled={!hasNextSection || loading}
-                    className="nav-button"
-                >
-                    Next Section
-                </button>
-            </div>
-
-            {loading && (
-                <div className="loading-container">
-                    <div className="loading-spinner"></div>
-                    <p>Loading content...</p>
+        <div className="book-reader-container">
+            <div className={`book-reader ${isPanelOpen ? 'with-panel' : ''}`}>
+                <div className="book-header">
+                    <h2>{book.title}</h2>
+                    <p><strong>Author:</strong> {book.author}</p>
                 </div>
-            )}
-
-            {error && (
-                <div className="error-message">
-                    {error}
-                </div>
-            )}
-
-            {!loading && !error && content && (
-                <div className="book-content">
-                    <div 
-                        className="content-container"
-                        dangerouslySetInnerHTML={{ __html: content }}
-                    />
-                </div>
-            )}
-
-            <div className="navigation-controls bottom">
-                <button 
-                    onClick={handlePreviousSection}
-                    disabled={sections.indexOf(currentSection) === 0 || loading}
-                    className="nav-button"
-                >
-                    Previous Section
-                </button>
-                <span className="page-indicator">Section {currentSection.toUpperCase()}</span>
-                <button 
-                    onClick={handleNextSection}
-                    disabled={!hasNextSection || loading}
-                    className="nav-button"
-                >
-                    Next Section
+    
+                <div className="navigation-controls">
+                    <button 
+                        onClick={handlePreviousSection}
+                        disabled={sections.indexOf(currentSection) === 0 || loading}
+                        className="nav-button"
+                    >
+                        Previous Section
+                    </button>
+                    <span className="page-indicator">Section {currentSection.toUpperCase()}</span>
+                    <button 
+                        onClick={handleNextSection}
+                        disabled={!hasNextSection || loading}
+                        className="nav-button"
+                    >
+                        Next Section
+                    </button>
+                    <button
+                        onClick={togglePanel}
+                        className="modernize-button"
+                    >
+                        {isPanelOpen ? 'Hide Modern Text' : 'Show Modern Text'}
                 </button>
             </div>
-
-            <div className="chapter-selection">
-                <h3>Select a Chapter</h3>
-                <select onChange={handleChapterChange} value={selectedChapter}>
-                    <option value="">Select a chapter</option>
-                    {chapters.map((chapter) => (
-                        <option key={chapter.id} value={chapter.id}>{chapter.title}</option>
-                    ))}
-                </select>
-
-                {selectedChapter && (
-                    <div className="chapter-questions">
-                        <ul>
-                            {chapterQuestions[selectedChapter].map((item, index) => (
-                                <li key={index}>
-                                    <p>{item.question}</p>
-                                    <input
-                                        type="text"
-                                        value={userAnswers[index] || ''}
-                                        onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                        placeholder="Type your answer here"
-                                    />
-                                    <button onClick={() => alert(checkAnswer(index, item.answer) ? "Correct!" : "Try again!")}>
-                                        Check Answer
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+    
+                {loading && (
+                    <div className="loading-container">
+                        <div className="loading-spinner"></div>
+                        <p>Loading content...</p>
+                    </div>
+                )}
+    
+                {error && (
+                    <div className="error-message">
+                        {error}
+                    </div>
+                )}
+    
+                {!loading && !error && content && (
+                    <div className="book-content">
+                        <div 
+                            className="content-container"
+                            dangerouslySetInnerHTML={{ __html: content }}
+                        />
+                    </div>
+                )}
+    
+                <div className="navigation-controls bottom">
+                    <button 
+                        onClick={handlePreviousSection}
+                        disabled={sections.indexOf(currentSection) === 0 || loading}
+                        className="nav-button"
+                    >
+                        Previous Section
+                    </button>
+                    <span className="page-indicator">Section {currentSection.toUpperCase()}</span>
+                    <button 
+                        onClick={handleNextSection}
+                        disabled={!hasNextSection || loading}
+                        className="nav-button"
+                    >
+                        Next Section
+                    </button>
+                </div>
+                
+                <div className="chapter-selection">
+                    <h3>Select a Chapter</h3>
+                    <select onChange={handleChapterChange} value={selectedChapter}>
+                        <option value="">Select a chapter</option>
+                        {chapters.map((chapter) => (
+                            <option key={chapter.id} value={chapter.id}>{chapter.title}</option>
+                        ))}
+                    </select>
+    
+                    {selectedChapter && (
+                        <div className="chapter-questions">
+                            <ul>
+                                {chapterQuestions[selectedChapter].map((item, index) => (
+                                    <li key={index}>
+                                        <p>{item.question}</p>
+                                        <input
+                                            type="text"
+                                            value={userAnswers[index] || ''}
+                                            onChange={(e) => handleAnswerChange(index, e.target.value)}
+                                            placeholder="Type your answer here"
+                                        />
+                                        <button onClick={() => alert(checkAnswer(index, item.answer) ? "Correct!" : "Try again!")}>
+                                            Check Answer
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            </div>
+    
+            {/* Modernized Panel - Moved outside the main content area */}
+            <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
+            <div className="panel-header">
+                <h3>Modern Translation</h3>
+                <button 
+                    onClick={togglePanel}
+                    className="close-panel-button"
+                    aria-label="Close panel"
+                >
+                    ×
+                </button>
+            </div>
+            <div className="panel-content">
+                {isModernizing ? (
+                    <div className="loading-container">
+                        <div className="loading-spinner"></div>
+                        <p>Modernizing text...</p>
+                    </div>
+                ) : modernizedContent ? (
+                    <div className="modernized-text">
+                        {modernizedContent}
+                    </div>
+                ) : (
+                    <div className="placeholder-text">
+                        Click "Modernize" to see the modern translation of the text.
                     </div>
                 )}
             </div>
         </div>
+        </div>
     );
 };
-
 export default BookReader;
