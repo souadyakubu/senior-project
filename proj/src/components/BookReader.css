@@ -33,20 +33,26 @@
 
 .nav-button {
   padding: 10px 20px;
-  background-color: #2c5282;
   color: white;
   border: none;
-  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
+  background: none;
+  /* Remove background */
+  border-radius: 0;
+  /* Remove border radius */
 }
 
 .nav-button:hover:not(:disabled) {
-  background-color: #3182ce;
+  background-color: none;
+  /* Ensure hover doesn't add background */
+  color: #1a365d;
+  /* Optional: change hover color */
 }
 
 .nav-button:disabled {
-  background-color: #1a365d;
+  color: #aaa;
+  /* Dim disabled color for clarity */
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -66,8 +72,10 @@
 }
 
 .loading-spinner {
-  border: 4px solid #333;  /* Darker circle */
-  border-top: 4px solid #fff;  /* White spinning part */
+  border: 4px solid #333;
+  /* Darker circle */
+  border-top: 4px solid #fff;
+  /* White spinning part */
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -75,8 +83,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -136,7 +149,7 @@
 
 .nav-button {
   padding: 10px 20px;
-  background-color: #2c5282;
+  background-color: #1a365d;
   color: white;
   border: none;
   border-radius: 4px;
@@ -186,8 +199,10 @@
   top: 0;
   width: 400px;
   height: 100vh;
-  background: #1a1a1a;  /* Dark background */
-  color: white;        /* White text */
+  background: #1a1a1a;
+  /* Dark background */
+  color: white;
+  /* White text */
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
   transition: right 0.3s ease;
   z-index: 1000;
@@ -199,11 +214,13 @@
 
 .panel-header {
   padding: 15px 20px;
-  border-bottom: 1px solid #333;  /* Darker border */
+  border-bottom: 1px solid #333;
+  /* Darker border */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #1a1a1a;  /* Match panel background */
+  background: #1a1a1a;
+  /* Match panel background */
 }
 
 .panel-content {
@@ -219,22 +236,25 @@
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 50%;
-  color: #fff;  /* White X button */
+  color: #fff;
+  /* White X button */
   transition: background-color 0.2s;
 }
 
 .close-panel-button:hover {
-  background-color: #333;  /* Darker hover state */
+  background-color: #333;
+  /* Darker hover state */
 }
 
 .placeholder-text {
-  color: #aaa;  /* Light grey for placeholder */
+  color: #aaa;
+  /* Light grey for placeholder */
   text-align: center;
   margin-top: 20px;
 }
 
 .modernize-button {
-  background-color: #4a90e2;
+  background-color: #1a365d;
   color: white;
   padding: 8px 16px;
   border: none;
@@ -245,7 +265,7 @@
 }
 
 .modernize-button.active {
-  background-color: #357abd;
+  background-color: #1a365d;
 }
 
 .modernize-button:disabled {
@@ -254,17 +274,55 @@
 }
 
 .modernize-button:hover:not(:disabled) {
-  background-color: #357abd;
+  background-color: #1a365d;
 }
 
 .modernized-text {
   white-space: pre-wrap;
   line-height: 1.6;
   padding: 20px;
-  color: white;  /* Ensure text is white */
+  color: white;
+  /* Ensure text is white */
 }
 
+
+.quiz-button {
+  background-color: #1a365d;
+  /* Matches the primary button color */
+  color: white;
+  padding: 5px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+  font-size: 13px;
+  margin: 10px auto;
+  display: block;
+  text-align: center;
+}
+
+.quiz-button:hover {
+  background-color: #3182ce;
+  /* Matches the hover color for primary buttons */
+  transform: scale(1.05);
+}
+
+.quiz-button:disabled {
+  background-color: #1a365d;
+  /* Matches disabled button color */
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+
+
+
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
