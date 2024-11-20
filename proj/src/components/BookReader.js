@@ -3,9 +3,9 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import books from './Books';
 import './BookReader.css';
-//import ClaudeService from '../services/claudeService';
 import OpenAIService from '../services/openAIService';
-
+import { auth, saveModernization, getModernizations, deleteModernization } from '../services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const BookReader = () => {
     const { bookTitle } = useParams();
@@ -20,13 +20,50 @@ const BookReader = () => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [isModernizing, setIsModernizing] = useState(false);
     const [modernizedContent, setModernizedContent] = useState('');
-    //const claudeService = new ClaudeService(process.env.REACT_APP_ANTHROPIC_API_KEY);
+    const [modernizationHistory, setModernizationHistory] = useState({});
+    const [user, setUser] = useState(null);
+    const [isLoadingModernizations, setIsLoadingModernizations] = useState(false);
     const openAIService = new OpenAIService(process.env.REACT_APP_OPENAI_API_KEY);
-    
-    
 
     // Array of CCEL's section identifiers
-    const sections = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+    const sections = ['i', 'ii', 'iii', 'iii.i', 'iii.ii', 'iii.iii', 'iii.iv', 'iv', 'iv.i', 'iv.ii'];
+
+    // Firebase auth state listener
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+            if (currentUser) {
+                loadModernizations();
+            }
+        });
+
+        return () => unsubscribe();
+    }, [currentSection]);
+
+    // Load modernizations from Firebase
+    const loadModernizations = async () => {
+        if (!user || !book) return;
+
+        setIsLoadingModernizations(true);
+        try {
+            const { history, error } = await getModernizations(book.title, currentSection);
+            if (!error && history.length > 0) {
+                // Set the most recent modernization as the current one
+                setModernizedContent(history[history.length - 1].text);
+                
+                // Update modernization history
+                setModernizationHistory(prev => ({
+                    ...prev,
+                    [currentSection]: history.map(item => item.text)
+                }));
+            }
+        } catch (error) {
+            console.error('Error loading modernizations:', error);
+            setError('Failed to load modernization history.');
+        } finally {
+            setIsLoadingModernizations(false);
+        }
+    };
     
     const loadContent = async (section) => {
         if (!book?.link) return;
@@ -34,8 +71,8 @@ const BookReader = () => {
         try {
             setLoading(true);
             setError(null);
+            setModernizedContent(''); // Reset modernized content when loading new section
 
-            // Construct URL based on CCEL's structure
             const baseUrl = book.link.split('practice.')[0];
             const pageUrl = `${baseUrl}practice.${section}.html`;
             
@@ -55,7 +92,6 @@ const BookReader = () => {
 
             if (response.data.content) {
                 setContent(response.data.content);
-                // Check if next section exists
                 const nextSectionIndex = sections.indexOf(section) + 1;
                 setHasNextSection(nextSectionIndex < sections.length);
             }
@@ -80,6 +116,7 @@ const BookReader = () => {
         if (currentIndex < sections.length - 1) {
             const nextSection = sections[currentIndex + 1];
             setCurrentSection(nextSection);
+            setModernizedContent('');
             window.scrollTo(0, 0);
         }
     };
@@ -89,30 +126,71 @@ const BookReader = () => {
         if (currentIndex > 0) {
             const prevSection = sections[currentIndex - 1];
             setCurrentSection(prevSection);
+            setModernizedContent('');
             window.scrollTo(0, 0);
         }
     };
 
-    // Quiz functionality
-    const chapters = [
-        { id: '1', title: 'Chapter 1' },
-        { id: '2', title: 'Chapter 2' },
-        { id: '3', title: 'Chapter 3' },
-    ];
+    const handleModernizeText = async () => {
+        if (!user) {
+            setError('Please sign in to modernize text.');
+            return;
+        }
 
-    const chapterQuestions = {
-        '1': [
-            { question: "What is the main theme?", answer: "Theme1" },
-            { question: "Who are the key characters?", answer: "Characters1" }
-        ],
-        '2': [
-            { question: "What challenges are introduced?", answer: "Challenges" },
-            { question: "How does the character react?", answer: "Reaction" }
-        ],
-        '3': [
-            { question: "What lessons are learned?", answer: "Lesson" },
-            { question: "How does the chapter conclude?", answer: "Conclusion" }
-        ]
+        try {
+            setIsModernizing(true);
+            setError(null);
+            
+            const textToModernize = content.replace(/<[^>]+>/g, '');
+            const modernizedText = await openAIService.modernizeText(textToModernize);
+            
+            // Save to Firebase
+            const { error: saveError } = await saveModernization(book.title, currentSection, modernizedText);
+            if (saveError) {
+                throw new Error(saveError);
+            }
+            
+            setModernizedContent(modernizedText);
+            
+            // Update local state
+            setModernizationHistory(prev => ({
+                ...prev,
+                [currentSection]: [...(prev[currentSection] || []), modernizedText]
+            }));
+        } catch (error) {
+            console.error('Error modernizing text:', error);
+            setError('Failed to modernize text. Please try again.');
+        } finally {
+            setIsModernizing(false);
+        }
+    };
+
+    const handleDeleteModernization = async (text, index) => {
+        if (!user || !book) return;
+
+        try {
+            const { history } = await getModernizations(book.title, currentSection);
+            const itemToDelete = history.find((item, idx) => idx === index);
+            
+            if (itemToDelete) {
+                await deleteModernization(book.title, currentSection, itemToDelete.timestamp);
+                
+                // Update local state
+                const updatedHistory = modernizationHistory[currentSection].filter((_, idx) => idx !== index);
+                setModernizationHistory(prev => ({
+                    ...prev,
+                    [currentSection]: updatedHistory
+                }));
+
+                // If we deleted the current modernization, update to the most recent one
+                if (text === modernizedContent && updatedHistory.length > 0) {
+                    setModernizedContent(updatedHistory[updatedHistory.length - 1]);
+                }
+            }
+        } catch (error) {
+            console.error('Error deleting modernization:', error);
+            setError('Failed to delete modernization.');
+        }
     };
 
     const handleChapterChange = (e) => {
@@ -131,33 +209,70 @@ const BookReader = () => {
 
     const togglePanel = () => {
         setIsPanelOpen(!isPanelOpen);
-        if (!isPanelOpen && !modernizedContent && !isModernizing) {
-            handleModernizeText();
+    };
+
+    const renderPanelContent = () => {
+        if (!user) {
+            return (
+                <div className="panel-content">
+                    <p>Please sign in to use the modernization feature.</p>
+                </div>
+            );
         }
+
+        if (isLoadingModernizations || isModernizing) {
+            return (
+                <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>{isModernizing ? 'Modernizing text...' : 'Loading modernizations...'}</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="panel-content">
+                <button 
+                    onClick={handleModernizeText}
+                    className="modernize-button"
+                    disabled={isModernizing}
+                >
+                    {modernizedContent ? 'Modernize Again' : 'Modernize Text'}
+                </button>
+                
+                {modernizedContent && (
+                    <div className="modernized-text">
+                        <h4>Latest Modernization:</h4>
+                        {modernizedContent}
+                    </div>
+                )}
+                
+                {modernizationHistory[currentSection]?.length > 1 && (
+                    <div className="modernization-history">
+                        <h4>Previous Modernizations:</h4>
+                        {modernizationHistory[currentSection].slice(0, -1).reverse().map((text, index) => (
+                            <div key={index} className="previous-modernization">
+                                <div className="modernization-header">
+                                    <h5>Attempt {modernizationHistory[currentSection].length - index - 1}</h5>
+                                    <button
+                                        onClick={() => handleDeleteModernization(text, index)}
+                                        className="delete-modernization-button"
+                                        aria-label="Delete modernization"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                                <p>{text}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     if (!book) {
         return <h2>Book not found</h2>;
     }
-
-    const handleModernizeText = async () => {
-        try {
-            setIsModernizing(true);
-            // Get the text content from your content state
-            // You might need to adjust this depending on how your content is structured
-            const textToModernize = content.replace(/<[^>]+>/g, ''); // Remove HTML tags
-            
-            //const modernizedText = await claudeService.modernizeText(textToModernize);
-            const modernizedText = await openAIService.modernizeText(textToModernize);  // Updated service call
-            
-            setModernizedContent(modernizedText);
-        } catch (error) {
-            console.error('Error modernizing text:', error);
-            setError('Failed to modernize text. Please try again.');
-        } finally {
-            setIsModernizing(false);
-        }
-    };
 
     return (
         <div className="book-reader-container">
@@ -188,8 +303,8 @@ const BookReader = () => {
                         className="modernize-button"
                     >
                         {isPanelOpen ? 'Hide Modern Text' : 'Show Modern Text'}
-                </button>
-            </div>
+                    </button>
+                </div>
     
                 {loading && (
                     <div className="loading-container">
@@ -230,69 +345,23 @@ const BookReader = () => {
                         Next Section
                     </button>
                 </div>
-                
-                <div className="chapter-selection">
-                    <h3>Select a Chapter</h3>
-                    <select onChange={handleChapterChange} value={selectedChapter}>
-                        <option value="">Select a chapter</option>
-                        {chapters.map((chapter) => (
-                            <option key={chapter.id} value={chapter.id}>{chapter.title}</option>
-                        ))}
-                    </select>
-    
-                    {selectedChapter && (
-                        <div className="chapter-questions">
-                            <ul>
-                                {chapterQuestions[selectedChapter].map((item, index) => (
-                                    <li key={index}>
-                                        <p>{item.question}</p>
-                                        <input
-                                            type="text"
-                                            value={userAnswers[index] || ''}
-                                            onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                            placeholder="Type your answer here"
-                                        />
-                                        <button onClick={() => alert(checkAnswer(index, item.answer) ? "Correct!" : "Try again!")}>
-                                            Check Answer
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                </div>
             </div>
     
-            {/* Modernized Panel - Moved outside the main content area */}
             <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
-            <div className="panel-header">
-                <h3>Modern Translation</h3>
-                <button 
-                    onClick={togglePanel}
-                    className="close-panel-button"
-                    aria-label="Close panel"
-                >
-                    ×
-                </button>
+                <div className="panel-header">
+                    <h3>Modern Translation</h3>
+                    <button 
+                        onClick={togglePanel}
+                        className="close-panel-button"
+                        aria-label="Close panel"
+                    >
+                        ×
+                    </button>
+                </div>
+                {renderPanelContent()}
             </div>
-            <div className="panel-content">
-                {isModernizing ? (
-                    <div className="loading-container">
-                        <div className="loading-spinner"></div>
-                        <p>Modernizing text...</p>
-                    </div>
-                ) : modernizedContent ? (
-                    <div className="modernized-text">
-                        {modernizedContent}
-                    </div>
-                ) : (
-                    <div className="placeholder-text">
-                        Click "Modernize" to see the modern translation of the text.
-                    </div>
-                )}
-            </div>
-        </div>
         </div>
     );
 };
+
 export default BookReader;
