@@ -202,10 +202,11 @@ const BookReader = () => {
 
                     <button
                         className="quiz-button"
-                        onClick={() => navigate('/quiz')}  // Using navigate() for routing
+                        onClick={() => navigate(`/quiz?section=${currentSection}`)}  // Passing the section context
                     >
                         Take Quiz
                     </button>
+
 
                     <button
                         onClick={handleNextSection}
