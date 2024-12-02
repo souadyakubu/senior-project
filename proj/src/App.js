@@ -9,6 +9,7 @@ import books from './components/Books';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import './App.css';
+import QuizPage from './components/QuizPage';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -49,16 +50,17 @@ function App() {
             <Sidebar />
             <div className="content">
               <Routes>
-                <Route 
-                  path="/" 
+                <Route
+                  path="/"
                   element={
                     <>
                       <h1>Home</h1>
                       <BookSection title="The Collection" books={books} />
                     </>
-                  } 
+                  }
                 />
                 <Route path="/book/:bookTitle" element={<BookReader />} />
+                <Route path="/quiz" element={<QuizPage />} /> {/* Added the Quiz route for logged-in users */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
@@ -95,4 +97,3 @@ const styles = {
 };
 
 export default App;
-

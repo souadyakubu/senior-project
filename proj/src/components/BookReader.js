@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import books from './Books';
 import './BookReader.css';
+import QuizPage from './QuizPage';
 //import ClaudeService from '../services/claudeService';
 import OpenAIService from '../services/openAIService';
 
@@ -19,6 +20,7 @@ const BookReader = () => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [isModernizing, setIsModernizing] = useState(false);
     const [modernizedContent, setModernizedContent] = useState('');
+    const navigate = useNavigate();
     //const claudeService = new ClaudeService(process.env.REACT_APP_ANTHROPIC_API_KEY);
     const openAIService = new OpenAIService(process.env.REACT_APP_OPENAI_API_KEY);
 
@@ -39,6 +41,8 @@ const BookReader = () => {
             console.log('Fetching URL:', pageUrl);
 
             const response = await axios.get(`http://localhost:3001/api/fetch-content?url=${encodeURIComponent(pageUrl)}`);
+
+            console.log('Raw HTML Response:', response.data.content);  // Log the raw content
 
             if (response.data.error) {
                 console.log('Error response:', response.data.error);
@@ -68,9 +72,18 @@ const BookReader = () => {
         }
     };
 
-    useEffect(() => {
-        loadContent(currentSection);
-    }, [currentSection, book]);
+
+
+    // Extract content from the HTML response (customize based on the actual HTML structure)
+    const extractContentFromHTML = (html) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Try using a more general selector, e.g., first <div>
+        const contentDiv = doc.querySelector('div');
+        return contentDiv ? contentDiv.innerHTML : 'Content not found';
+    };
+
 
     const handleNextSection = () => {
         const currentIndex = sections.indexOf(currentSection);
@@ -90,6 +103,9 @@ const BookReader = () => {
         }
     };
 
+    useEffect(() => {
+        loadContent(currentSection);
+    }, [currentSection, book]);
 
     const togglePanel = () => {
         setIsPanelOpen(!isPanelOpen);
@@ -186,10 +202,11 @@ const BookReader = () => {
 
                     <button
                         className="quiz-button"
-                        onClick={() => window.location.href = '/quiz'}
+                        onClick={() => navigate('/quiz')}  // Using navigate() for routing
                     >
                         Take Quiz
                     </button>
+
                     <button
                         onClick={handleNextSection}
                         disabled={!hasNextSection || loading}

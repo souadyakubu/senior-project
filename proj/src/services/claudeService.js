@@ -7,46 +7,26 @@ class ClaudeService {
         }
         this.anthropic = new Anthropic({
             apiKey: apiKey,
-            dangerouslyAllowBrowser: true
+            dangerouslyAllowBrowser: true,
         });
     }
 
-    async modernizeText(text) {
+    async askQuestion(question) {
         try {
-            if (!text || typeof text !== 'string') {
-                throw new Error('Invalid text input');
-            }
-
             const response = await this.anthropic.messages.create({
-                model: "claude-3-sonnet-20240229",  // Updated to Claude 3.5 Sonnet
-                max_tokens: 1024,
-                messages: [{
-                    role: "user",
-                    content: `Please modernize the following text while maintaining its meaning and theological accuracy. Make it more accessible to modern readers while preserving the core message: "${text}"`
-                }]
+                model: 'claude-3-sonnet-20240229',
+                max_tokens: 200,
+                messages: [{ role: 'user', content: question }],
             });
 
-            if (!response || !response.content || !response.content[0]) {
-                throw new Error('Invalid response from API');
+            if (response?.content?.[0]?.text) {
+                return response.content[0].text;
             }
 
-            return response.content[0].text;
+            throw new Error('Invalid response from Claude API');
         } catch (error) {
-            console.error('Error details:', {
-                message: error.message,
-                status: error.status,
-                type: error.type
-            });
-            
-            if (error.status === 401) {
-                throw new Error('Authentication failed - please check your API key');
-            } else if (error.status === 429) {
-                throw new Error('Rate limit exceeded - please try again later');
-            } else if (error.type === 'invalid_request_error') {
-                throw new Error('Invalid request - please check your input');
-            }
-            
-            throw new Error(`Failed to modernize text: ${error.message}`);
+            console.error('Error interacting with Claude:', error);
+            throw new Error('Failed to interact with Claude API');
         }
     }
 }
