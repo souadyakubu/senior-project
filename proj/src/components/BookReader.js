@@ -4,12 +4,14 @@ import axios from 'axios';
 import books from './Books';
 import './BookReader.css';
 import OpenAIService from '../services/openAIService';
+import ClaudeService from '../services/claudeService';
 
 const BookReader = () => {
     const { bookTitle } = useParams();
     const book = books.find(b => b.title === decodeURIComponent(bookTitle));
     const navigate = useNavigate();
     const openAIService = new OpenAIService(process.env.REACT_APP_OPENAI_API_KEY);
+    const claudeService = new ClaudeService(process.env.REACT_APP_ANTHROPIC_API_KEY);
 
     // State Management
     const [content, setContent] = useState('');
@@ -17,19 +19,22 @@ const BookReader = () => {
     const [error, setError] = useState(null);
     const [currentUrl, setCurrentUrl] = useState(null);
     const [isLastPage, setIsLastPage] = useState(false);
-    
-    // Modernization Panel State
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [isModernizing, setIsModernizing] = useState(false);
     const [modernizedContent, setModernizedContent] = useState('');
-    
+    const [selectedText, setSelectedText] = useState('');
+    const [selectionPosition, setSelectionPosition] = useState(null);
+    const [isExplaining, setIsExplaining] = useState(false);
+    const [showExplanation, setShowExplanation] = useState(false);
+    const [explanation, setExplanation] = useState('');
+
     // Helper function to get next Roman numeral
     const getNextRomanNumeral = (current) => {
         const romanNumerals = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
         const currentIndex = romanNumerals.indexOf(current);
         return currentIndex < romanNumerals.length - 1 ? romanNumerals[currentIndex + 1] : null;
     };
-    
+
     const checkIfPageHasContent = async (url) => {
         try {
             const response = await axios.get('http://localhost:3001/api/fetch-content', {
@@ -40,7 +45,7 @@ const BookReader = () => {
             return false;
         }
     };
-    
+
     const generateNextPageUrl = async (currentUrl) => {
         if (!currentUrl) {
             return `${book.baseUrl}/${book.urlName}.i.html`;
@@ -101,8 +106,10 @@ const BookReader = () => {
 
         // Handle subsection transitions
         if (section.includes('.')) {
-            const [mainSection, subSection] = section.split('.');
-            const cleanMainSection = mainSection.replace('.', '');
+            const parts = section.split('.');
+            const mainSection = parts[1];
+            const subSection = parts[2];
+            const cleanMainSection = parts[1];
             
             if (subSection === 'ii') {
                 return `${baseUrl}/${book.urlName}.${cleanMainSection}.i.html`;
@@ -124,8 +131,6 @@ const BookReader = () => {
             setLoading(true);
             setError(null);
             setModernizedContent('');
-
-            console.log('Loading content from:', url);
 
             const response = await axios.get('http://localhost:3001/api/fetch-content', {
                 params: { url }
@@ -152,14 +157,6 @@ const BookReader = () => {
         }
     };
 
-    useEffect(() => {
-        if (book) {
-            const startUrl = `${book.baseUrl}/${book.urlName}.i.html`;
-            setCurrentUrl(startUrl);
-            loadContent(startUrl);
-        }
-    }, [book]);
-
     const handleNextSection = async () => {
         setLoading(true);
         const nextUrl = await generateNextPageUrl(currentUrl);
@@ -172,7 +169,7 @@ const BookReader = () => {
         }
         setLoading(false);
     };
-    
+
     const handlePreviousSection = async () => {
         setLoading(true);
         const prevUrl = generatePreviousPageUrl(currentUrl);
@@ -197,11 +194,12 @@ const BookReader = () => {
         }
     };
 
+    // New integrated functions
     const handleModernizeText = async () => {
         try {
             setIsModernizing(true);
             const textToModernize = content.replace(/<[^>]+>/g, '');
-            const modernizedText = await openAIService.modernizeText(textToModernize);
+            const modernizedText = await claudeService.modernizeText(textToModernize);
             setModernizedContent(modernizedText);
         } catch (error) {
             console.error('Error modernizing text:', error);
@@ -210,6 +208,89 @@ const BookReader = () => {
             setIsModernizing(false);
         }
     };
+
+    const handleTextSelection = () => {
+        const selection = window.getSelection();
+        const text = selection.toString().trim();
+        if (text) {
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+           
+            setSelectedText(text);
+            setSelectionPosition({
+                top: rect.top + window.scrollY,
+                left: rect.left + window.scrollX
+            });
+        } else {
+            setSelectedText('');
+            setSelectionPosition(null);
+        }
+    };
+
+    const handleModernizeSelection = async () => {
+        try {
+            setIsModernizing(true);
+            const modernizedText = await claudeService.modernizeText(selectedText);
+            setModernizedContent(modernizedText);
+            setIsPanelOpen(true);
+            setSelectedText('');
+            setSelectionPosition(null);
+        } catch (error) {
+            console.error('Error modernizing selected text:', error);
+            setError('Failed to modernize text. Please try again.');
+        } finally {
+            setIsModernizing(false);
+        }
+    };
+
+    const handleLogText = () => {
+        const selection = window.getSelection();
+        const text = selection.toString().trim();
+        console.log('Selected text:', text);
+    };
+
+    const handleExplainText = async () => {
+        try {
+            const selection = window.getSelection();
+            const text = selection.toString().trim();
+   
+            if (!text) return;
+   
+            setIsExplaining(true);
+            setShowExplanation(true);
+   
+            const contextData = {
+                bookTitle: book.title,
+                author: book.author,
+                pageContent: content.replace(/<[^>]+>/g, '')
+            };
+   
+            const explainedText = await claudeService.explainText(text, contextData);
+            setExplanation(explainedText);
+        } catch (error) {
+            console.error('Error explaining text:', error);
+            setError('Failed to explain text. Please try again.');
+        } finally {
+            setIsExplaining(false);
+        }
+    };
+
+    // Initial load effect
+    useEffect(() => {
+        if (book) {
+            const startUrl = `${book.baseUrl}/${book.urlName}.i.html`;
+            setCurrentUrl(startUrl);
+            loadContent(startUrl);
+        }
+    }, [book]);
+
+    // Text selection effect
+    useEffect(() => {
+        document.addEventListener('mouseup', handleTextSelection);
+        return () => {
+            document.removeEventListener('mouseup', handleTextSelection);
+        };
+    }, []);
 
     if (!book) {
         return <h2>Book not found</h2>;
@@ -223,7 +304,7 @@ const BookReader = () => {
                     <p><strong>Author:</strong> {book.author}</p>
                     <p className="section-indicator">Section {getCurrentSection()}</p>
                 </div>
-
+    
                 <div className="navigation-controls">
                     <button
                         onClick={handlePreviousSection}
@@ -246,29 +327,42 @@ const BookReader = () => {
                         ▶
                     </button>
                 </div>
-
+    
                 {loading && (
                     <div className="loading-container">
                         <div className="loading-spinner"></div>
                         <p>Loading content...</p>
                     </div>
                 )}
-
+    
                 {error && (
                     <div className="error-message">
                         {error}
                     </div>
                 )}
-
+    
                 {!loading && !error && content && (
                     <div className="book-content">
                         <div
                             className="content-container"
                             dangerouslySetInnerHTML={{ __html: content }}
                         />
+                        {selectionPosition && selectedText && (
+                            <div
+                                className="selection-toolbar"
+                                style={{
+                                    position: 'absolute',
+                                    top: `${selectionPosition.top - 40}px`,
+                                    left: `${selectionPosition.left}px`
+                                }}
+                            >
+                                <button onClick={handleModernizeSelection}>Modernize Selection</button>
+                                <button onClick={handleExplainText}>Explain Selection</button>
+                            </div>
+                        )}
                     </div>
                 )}
-
+    
                 <div className="navigation-controls bottom">
                     <button
                         onClick={handlePreviousSection}
@@ -279,7 +373,13 @@ const BookReader = () => {
                     </button>
                     <button
                         className="quiz-button"
-                        onClick={() => navigate(`/quiz?section=${getCurrentSection()}`)}
+                        onClick={() => navigate(`/quiz?section=${getCurrentSection()}`, {
+                            state: { 
+                                content: content,
+                                bookTitle: book.title,
+                                author: book.author 
+                            }
+                        })}
                     >
                         Take Quiz
                     </button>
@@ -292,7 +392,7 @@ const BookReader = () => {
                     </button>
                 </div>
             </div>
-
+    
             <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
                 <div className="panel-header">
                     <h3>Modern Translation</h3>
@@ -321,8 +421,34 @@ const BookReader = () => {
                     )}
                 </div>
             </div>
+    
+            {showExplanation && (
+                <div className={`explanation-panel ${showExplanation ? 'open' : ''}`}>
+                    <div className="panel-header">
+                        <h3>Explanation</h3>
+                        <button 
+                            onClick={() => setShowExplanation(false)} 
+                            className="close-panel-button"
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <div className="panel-content">
+                        {isExplaining ? (
+                            <div className="loading-container">
+                                <div className="loading-spinner"></div>
+                                <p>Generating explanation...</p>
+                            </div>
+                        ) : (
+                            <div className="explanation-text">
+                                {explanation}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
-};
+}
 
 export default BookReader;
