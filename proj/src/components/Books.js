@@ -5,7 +5,7 @@ const books = [
         baseUrl: "https://ccel.org/ccel/julian/revelations",
         urlName: "revelations", 
         link: "https://ccel.org/ccel/julian/revelations/revelations.i.html",
-        cover: "path"
+        cover: "https://ccel.org/ccel/julian/revelations/files/revelations.jpg"
     },
     {
         title: "Practice of the Presence of God",
@@ -13,7 +13,7 @@ const books = [
         baseUrl: "https://ccel.org/ccel/lawrence/practice",
         urlName: "practice",
         link: "https://ccel.org/ccel/lawrence/practice/practice.i.html",
-        cover: "path"
+        cover: "https://ccel.org/ccel/lawrence/practice/files/practice.jpg"
     },
     {
         title: "The Normal Christian Life",
@@ -21,7 +21,7 @@ const books = [
         baseUrl: "https://ccel.org/ccel/nee/normal",
         urlName: "normal",
         link: "https://ccel.org/ccel/nee/normal/normal.i.html",
-        cover: "path"
+        cover: "https://ccel.org/ccel/nee/normal/files/normal.jpg"
     }
 ];
 
