@@ -8,8 +8,8 @@ interface BookContent {
 export async function fetchBookContent(url: string): Promise<BookContent> {
   try {
     // Use local proxy instead of direct CCEL access
-    const response = await axios.get(`http://localhost:3001/api/fetch-content?url=${encodeURIComponent(url)}`);
-    
+    const response = await axios.get(`https://senior-proj-bfee2.cloudfunctions.net/api/fetch-content?url=${encodeURIComponent(url)}`);
+
     if (response.data.error) {
       return { content: '', error: response.data.error };
     }

@@ -17,30 +17,31 @@ const BookReader = () => {
     const [error, setError] = useState(null);
     const [currentUrl, setCurrentUrl] = useState(null);
     const [isLastPage, setIsLastPage] = useState(false);
-    
+
     // Modernization Panel State
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [isModernizing, setIsModernizing] = useState(false);
     const [modernizedContent, setModernizedContent] = useState('');
-    
+
     // Helper function to get next Roman numeral
     const getNextRomanNumeral = (current) => {
         const romanNumerals = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
         const currentIndex = romanNumerals.indexOf(current);
         return currentIndex < romanNumerals.length - 1 ? romanNumerals[currentIndex + 1] : null;
     };
-    
+
     const checkIfPageHasContent = async (url) => {
         try {
-            const response = await axios.get('http://localhost:3001/api/fetch-content', {
-                params: { url }
-            });
+            const response = await axios.get('https://us-central1-senior-proj-bfee2.cloudfunctions.net/api/fetch-content'
+                , {
+                    params: { url }
+                });
             return !response.data.error && response.data.content && response.data.content.trim() !== '';
         } catch (err) {
             return false;
         }
     };
-    
+
     const generateNextPageUrl = async (currentUrl) => {
         if (!currentUrl) {
             return `${book.baseUrl}/${book.urlName}.i.html`;
@@ -103,7 +104,7 @@ const BookReader = () => {
         if (section.includes('.')) {
             const [mainSection, subSection] = section.split('.');
             const cleanMainSection = mainSection.replace('.', '');
-            
+
             if (subSection === 'ii') {
                 return `${baseUrl}/${book.urlName}.${cleanMainSection}.i.html`;
             }
@@ -127,7 +128,7 @@ const BookReader = () => {
 
             console.log('Loading content from:', url);
 
-            const response = await axios.get('http://localhost:3001/api/fetch-content', {
+            const response = await axios.get('https://senior-proj-bfee2.cloudfunctions.net/api/fetch-content', {
                 params: { url }
             });
 
@@ -172,7 +173,7 @@ const BookReader = () => {
         }
         setLoading(false);
     };
-    
+
     const handlePreviousSection = async () => {
         setLoading(true);
         const prevUrl = generatePreviousPageUrl(currentUrl);
