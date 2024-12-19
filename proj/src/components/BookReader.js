@@ -32,7 +32,7 @@ const BookReader = () => {
 
     const checkIfPageHasContent = async (url) => {
         try {
-            const response = await axios.get('http://localhost:3001/api/fetch-content', {
+            const response = await axios.get('https://us-central1-senior-proj-bfee2.cloudfunctions.net/api/fetch-content', {
                 params: { url }
             });
             return !response.data.error && response.data.content && response.data.content.trim() !== '';
@@ -127,7 +127,7 @@ const BookReader = () => {
 
             console.log('Loading content from:', url);
 
-            const response = await axios.get('http://localhost:3001/api/fetch-content', {
+            const response = await axios.get('https://us-central1-senior-proj-bfee2.cloudfunctions.net/api/fetch-content', {
                 params: { url }
             });
 
