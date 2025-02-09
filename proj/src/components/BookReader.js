@@ -4,8 +4,9 @@ import axios from 'axios';
 import books from './Books';
 import './BookReader.css';
 import QuizPage from './QuizPage';
-//import ClaudeService from '../services/claudeService';
-import OpenAIService from '../services/openAIService';
+import ClaudeService from '../services/claudeService';
+//import OpenAIService from '../services/openAIService';
+import SelectionPopup from './SelectionPopup';
 
 const BookReader = () => {
     const { bookTitle } = useParams();
@@ -21,8 +22,13 @@ const BookReader = () => {
     const [isModernizing, setIsModernizing] = useState(false);
     const [modernizedContent, setModernizedContent] = useState('');
     const navigate = useNavigate();
-    //const claudeService = new ClaudeService(process.env.REACT_APP_ANTHROPIC_API_KEY);
-    const openAIService = new OpenAIService(process.env.REACT_APP_OPENAI_API_KEY);
+    const claudeService = new ClaudeService(process.env.REACT_APP_ANTHROPIC_API_KEY);
+    const [selectedText, setSelectedText] = useState('');
+    const [selectionPosition, setSelectionPosition] = useState(null);
+    //const openAIService = new OpenAIService(process.env.REACT_APP_OPENAI_API_KEY);
+    const [explanation, setExplanation] = useState('');
+    const [isExplaining, setIsExplaining] = useState(false);
+    const [showExplanation, setShowExplanation] = useState(false);
 
     // Array of CCEL's section identifiers
     const sections = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
@@ -107,6 +113,25 @@ const BookReader = () => {
         loadContent(currentSection);
     }, [currentSection, book]);
 
+    useEffect(() => {
+        const contentContainer = document.querySelector('.content-container');
+        if (contentContainer) {
+            contentContainer.addEventListener('mouseup', handleTextSelection);
+            
+            // Clean up listener when component unmounts
+            return () => {
+                contentContainer.removeEventListener('mouseup', handleTextSelection);
+            };
+        }
+    }, []);
+
+    useEffect(() => {
+        if (selectedText) {
+            console.log('Selected text:', selectedText);
+            console.log('Selection position:', selectionPosition);
+        }
+    }, [selectedText, selectionPosition]);
+
     const togglePanel = () => {
         setIsPanelOpen(!isPanelOpen);
         if (!isPanelOpen && !modernizedContent && !isModernizing) {
@@ -118,15 +143,15 @@ const BookReader = () => {
         return <h2>Book not found</h2>;
     }
 
-    const handleModernizeText = async () => {
+    const handleModernizeText = async () => { 
         try {
             setIsModernizing(true);
             // Get the text content from your content state
             // You might need to adjust this depending on how your content is structured
             const textToModernize = content.replace(/<[^>]+>/g, ''); // Remove HTML tags
 
-            //const modernizedText = await claudeService.modernizeText(textToModernize);
-            const modernizedText = await openAIService.modernizeText(textToModernize);  // Updated service call
+            const modernizedText = await claudeService.modernizeText(textToModernize);
+            //const modernizedText = await openAIService.modernizeText(textToModernize);  // Updated service call
 
             setModernizedContent(modernizedText);
         } catch (error) {
@@ -137,6 +162,79 @@ const BookReader = () => {
         }
     };
 
+    const handleTextSelection = () => {
+        const selection = window.getSelection();
+        const text = selection.toString().trim();
+
+        if (text) {
+            // Get selection coordinates for positioning the modernize button later
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            
+            setSelectedText(text);
+            setSelectionPosition({
+                top: rect.top + window.scrollY,
+                left: rect.left + window.scrollX
+            });
+        } else {
+            setSelectedText('');
+            setSelectionPosition(null);
+        }
+    };
+
+    const handleModernizeSelection = async () => {
+        try {
+            setIsModernizing(true);
+            const modernizedText = await claudeService.modernizeText(selectedText);
+            setModernizedContent(modernizedText);
+            setIsPanelOpen(true);
+            // Clear the selection after modernizing
+            setSelectedText('');
+            setSelectionPosition(null);
+        } catch (error) {
+            console.error('Error modernizing selected text:', error);
+            setError('Failed to modernize text. Please try again.');
+        } finally {
+            setIsModernizing(false);
+        }
+    };
+
+    const handleLogText = () => {
+        const selection = window.getSelection();
+        const text = selection.toString().trim();
+        console.log('Selected text:', text);
+    };
+
+    const handleExplainText = async () => {
+        try {
+            const selection = window.getSelection();
+            const text = selection.toString().trim();
+    
+            if (!text) {
+                return;
+            }
+    
+            setIsExplaining(true);
+            setShowExplanation(true);
+    
+            // Create context object with book info and current page content
+            const contextData = {
+                bookTitle: book.title,
+                author: book.author,
+                pageContent: content.replace(/<[^>]+>/g, '') // Remove HTML tags from content
+            };
+    
+            const explainedText = await claudeService.explainText(text, contextData);
+            setExplanation(explainedText);
+        } catch (error) {
+            console.error('Error explaining text:', error);
+            setError('Failed to explain text. Please try again.');
+        } finally {
+            setIsExplaining(false);
+        }
+    };
+
+
     return (
         <div className="book-reader-container">
             <div className={`book-reader ${isPanelOpen ? 'with-panel' : ''}`}>
@@ -144,7 +242,7 @@ const BookReader = () => {
                     <h2>{book.title} - Section {currentSection.toUpperCase()}</h2>
                     <p><strong>Author:</strong> {book.author}</p>
                 </div>
-
+    
                 <div className="navigation-controls">
                     <button
                         onClick={handlePreviousSection}
@@ -160,37 +258,48 @@ const BookReader = () => {
                         {isPanelOpen ? 'Hide Modern Text' : 'Show Modern Text'}
                     </button>
                     <button
+                        onClick={handleExplainText}
+                        className="modernize-button"
+                    >
+                        Explain Selection
+                    </button>
+                    <button
                         onClick={handleNextSection}
                         disabled={!hasNextSection || loading}
                         className="nav-button"
                     >
                         ▶
                     </button>
-
                 </div>
-
+    
                 {loading && (
                     <div className="loading-container">
                         <div className="loading-spinner"></div>
                         <p>Loading content...</p>
                     </div>
                 )}
-
+    
                 {error && (
                     <div className="error-message">
                         {error}
                     </div>
                 )}
-
+    
                 {!loading && !error && content && (
                     <div className="book-content">
                         <div
                             className="content-container"
                             dangerouslySetInnerHTML={{ __html: content }}
                         />
+                        {selectedText && (
+                            <SelectionPopup
+                                position={selectionPosition}
+                                onModernize={handleModernizeSelection}
+                            />
+                        )}
                     </div>
                 )}
-
+    
                 <div className="navigation-controls bottom">
                     <button
                         onClick={handlePreviousSection}
@@ -199,15 +308,12 @@ const BookReader = () => {
                     >
                         ◀
                     </button>
-
                     <button
                         className="quiz-button"
-                        onClick={() => navigate(`/quiz?section=${currentSection}`)}  // Passing the section context
+                        onClick={() => navigate(`/quiz?section=${currentSection}`)}
                     >
                         Take Quiz
                     </button>
-
-
                     <button
                         onClick={handleNextSection}
                         disabled={!hasNextSection || loading}
@@ -216,37 +322,66 @@ const BookReader = () => {
                         ▶
                     </button>
                 </div>
+    
+                {/* Panels */}
+                <div className="panels-container">
+    {/* Modernized Panel */}
+    <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
+        <div className="panel-header">
+            <h3>Modern Translation</h3>
+            <button
+                onClick={togglePanel}
+                className="close-panel-button"
+                aria-label="Close panel"
+            >
+                ×
+            </button>
+        </div>
+        <div className="panel-content">
+            {isModernizing ? (
+                <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Modernizing text...</p>
+                </div>
+            ) : modernizedContent ? (
+                <div className="modernized-text">
+                    {modernizedContent}
+                </div>
+            ) : (
+                <div className="placeholder-text">
+                    Click "Modernize" to see the modern translation of the text.
+                </div>
+            )}
+        </div>
+    </div>
 
-                <div className="chapter-selection">
-
-
-                    {/* Modernized Panel - Moved outside the main content area */}
-                    <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
-                        <div className="panel-header">
-                            <h3>Modern Translation</h3>
-                            <button
-                                onClick={togglePanel}
-                                className="close-panel-button"
-                                aria-label="Close panel"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <div className="panel-content">
-                            {isModernizing ? (
-                                <div className="loading-container">
-                                    <div className="loading-spinner"></div>
-                                    <p>Modernizing text...</p>
-                                </div>
-                            ) : modernizedContent ? (
-                                <div className="modernized-text">
-                                    {modernizedContent}
-                                </div>
-                            ) : (
-                                <div className="placeholder-text">
-                                    Click "Modernize" to see the modern translation of the text.
-                                </div>
-                            )}
+    {/* Explanation Panel */}
+    <div className={`explanation-panel ${showExplanation ? 'open' : ''}`}>
+        <div className="panel-header">
+            <h3>Text Explanation</h3>
+            <button
+                onClick={() => setShowExplanation(false)}
+                className="close-panel-button"
+                aria-label="Close panel"
+            >
+                ×
+            </button>
+        </div>
+        <div className="panel-content">
+            {isExplaining ? (
+                <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <p>Analyzing text...</p>
+                </div>
+            ) : explanation ? (
+                <div className="explanation-text">
+                    {explanation}
+                </div>
+            ) : (
+                <div className="placeholder-text">
+                    Select text and click "Explain Selection" to see an explanation.
+                </div>
+            )}
                         </div>
                     </div>
                 </div>

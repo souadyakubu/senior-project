@@ -1,10 +1,28 @@
+.book-reader-container {
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
 .book-reader {
   padding: 20px;
   max-width: 800px;
   margin: 0 auto;
   color: #fff;
+  flex: 1;
+  transition: width 0.3s ease;
+  overflow-y: auto;
+  width: 100%;
 }
 
+.book-reader.with-panel {
+  width: calc(100% - 400px);
+  transition: width 0.3s ease;
+}
+
+/* Header Styles */
 .book-header {
   margin-bottom: 20px;
   padding: 20px;
@@ -17,6 +35,7 @@
   color: #fff;
 }
 
+/* Navigation Controls */
 .navigation-controls {
   display: flex;
   justify-content: space-between;
@@ -33,79 +52,31 @@
 
 .nav-button {
   padding: 10px 20px;
+  background-color: #1a365d;
   color: white;
   border: none;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
-  background: none;
-  /* Remove background */
-  border-radius: 0;
-  /* Remove border radius */
 }
 
 .nav-button:hover:not(:disabled) {
-  background-color: none;
-  /* Ensure hover doesn't add background */
-  color: #1a365d;
-  /* Optional: change hover color */
+  background-color: #3182ce;
 }
 
 .nav-button:disabled {
-  color: #aaa;
-  /* Dim disabled color for clarity */
+  background-color: #1a365d;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.page-indicator {
-  color: #e0e0e0;
-  font-size: 16px;
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  color: white;
-}
-
-.loading-spinner {
-  border: 4px solid #333;
-  /* Darker circle */
-  border-top: 4px solid #fff;
-  /* White spinning part */
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.error-message {
-  padding: 15px;
-  background-color: rgba(255, 68, 68, 0.1);
-  color: #ff4444;
-  border-radius: 8px;
-  margin: 20px 0;
-  text-align: center;
-}
-
+/* Content Area */
 .book-content {
   background-color: #1e1e1e;
   padding: 30px;
   border-radius: 8px;
   line-height: 1.6;
+  position: relative;
 }
 
 .content-container {
@@ -133,66 +104,35 @@
   text-decoration: underline;
 }
 
-.navigation-controls {
+/* Loading and Error States */
+.loading-container {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  margin: 20px 0;
-  padding: 10px;
-  background-color: #1e1e1e;
-  border-radius: 8px;
-}
-
-.navigation-controls.bottom {
-  margin-top: 30px;
-}
-
-.nav-button {
-  padding: 10px 20px;
-  background-color: #1a365d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.nav-button:hover:not(:disabled) {
-  background-color: #3182ce;
-}
-
-.nav-button:disabled {
-  background-color: #1a365d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.page-indicator {
-  color: #e0e0e0;
-  font-size: 16px;
-}
-
-.book-reader-container {
-  display: flex;
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.book-reader {
-  flex: 1;
-  transition: width 0.3s ease;
+  justify-content: center;
   padding: 20px;
-  overflow-y: auto;
-  width: 100%;
+  color: white;
 }
 
-.book-reader.with-panel {
-  width: calc(100% - 400px);
-  transition: width 0.3s ease;
+.loading-spinner {
+  border: 4px solid #333;
+  border-top: 4px solid #fff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
 }
 
+.error-message {
+  padding: 15px;
+  background-color: rgba(255, 68, 68, 0.1);
+  color: #ff4444;
+  border-radius: 8px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+/* Panel Styles */
 .modernized-panel {
   position: fixed;
   right: -400px;
@@ -200,9 +140,7 @@
   width: 400px;
   height: 100vh;
   background: #1a1a1a;
-  /* Dark background */
   color: white;
-  /* White text */
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
   transition: right 0.3s ease;
   z-index: 1000;
@@ -212,15 +150,28 @@
   right: 0;
 }
 
+/* Add styles for explanation panel */
+.modernized-panel.explanation {
+  right: -400px;
+  background: #1a1a1a;
+}
+
+.modernized-panel.explanation.open {
+  right: 0;
+}
+
+/* When both panels are open, stack them */
+.modernized-panel.open + .modernized-panel.explanation.open {
+  right: 400px;
+}
+
 .panel-header {
   padding: 15px 20px;
   border-bottom: 1px solid #333;
-  /* Darker border */
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: #1a1a1a;
-  /* Match panel background */
 }
 
 .panel-content {
@@ -237,22 +188,14 @@
   padding: 8px 12px;
   border-radius: 50%;
   color: #fff;
-  /* White X button */
   transition: background-color 0.2s;
 }
 
 .close-panel-button:hover {
   background-color: #333;
-  /* Darker hover state */
 }
 
-.placeholder-text {
-  color: #aaa;
-  /* Light grey for placeholder */
-  text-align: center;
-  margin-top: 20px;
-}
-
+/* Button Styles */
 .modernize-button {
   background-color: #1a365d;
   color: white;
@@ -264,8 +207,8 @@
   transition: background-color 0.3s ease;
 }
 
-.modernize-button.active {
-  background-color: #1a365d;
+.modernize-button:hover:not(:disabled) {
+  background-color: #3182ce;
 }
 
 .modernize-button:disabled {
@@ -273,22 +216,8 @@
   cursor: not-allowed;
 }
 
-.modernize-button:hover:not(:disabled) {
-  background-color: #1a365d;
-}
-
-.modernized-text {
-  white-space: pre-wrap;
-  line-height: 1.6;
-  padding: 20px;
-  color: white;
-  /* Ensure text is white */
-}
-
-
 .quiz-button {
   background-color: #1a365d;
-  /* Matches the primary button color */
   color: white;
   padding: 5px 15px;
   border: none;
@@ -303,26 +232,60 @@
 
 .quiz-button:hover {
   background-color: #3182ce;
-  /* Matches the hover color for primary buttons */
   transform: scale(1.05);
 }
 
 .quiz-button:disabled {
   background-color: #1a365d;
-  /* Matches disabled button color */
   cursor: not-allowed;
   opacity: 0.6;
 }
 
+/* Text Styles */
+.modernized-text, .explanation-text {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  padding: 20px;
+  color: white;
+}
 
+.placeholder-text {
+  color: #aaa;
+  text-align: center;
+  margin-top: 20px;
+}
 
+/* Selection Popup */
+.selection-popup {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  z-index: 1000;
+  transition: opacity 0.2s ease-in-out;
+}
 
+/* Animation */
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
-  100% {
-    transform: rotate(360deg);
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .book-reader.with-panel {
+    width: 100%;
+  }
+  
+  .modernized-panel {
+    width: 100%;
+  }
+  
+  .modernized-panel.open + .modernized-panel.explanation.open {
+    right: 0;
+    top: 50%;
+    height: 50%;
   }
 }
