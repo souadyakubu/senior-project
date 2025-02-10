@@ -22,11 +22,12 @@ const BookReader = () => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [isModernizing, setIsModernizing] = useState(false);
     const [modernizedContent, setModernizedContent] = useState('');
-    const [selectedText, setSelectedText] = useState('');
-    const [selectionPosition, setSelectionPosition] = useState(null);
+    const [explanation, setExplanation] = useState('');
     const [isExplaining, setIsExplaining] = useState(false);
     const [showExplanation, setShowExplanation] = useState(false);
-    const [explanation, setExplanation] = useState('');
+    const [selectedText, setSelectedText] = useState('');
+    const [selectionPosition, setSelectionPosition] = useState(null);
+
 
     // Helper function to get next Roman numeral
     const getNextRomanNumeral = (current) => {
@@ -253,18 +254,21 @@ const BookReader = () => {
         try {
             const selection = window.getSelection();
             const text = selection.toString().trim();
-   
-            if (!text) return;
-   
+    
+            if (!text) {
+                return;
+            }
+    
             setIsExplaining(true);
             setShowExplanation(true);
-   
+    
+            // Create context object with book info and current page content
             const contextData = {
                 bookTitle: book.title,
                 author: book.author,
-                pageContent: content.replace(/<[^>]+>/g, '')
+                pageContent: content.replace(/<[^>]+>/g, '') // Remove HTML tags from content
             };
-   
+    
             const explainedText = await claudeService.explainText(text, contextData);
             setExplanation(explainedText);
         } catch (error) {
@@ -318,6 +322,12 @@ const BookReader = () => {
                         className="modernize-button"
                     >
                         {isPanelOpen ? 'Hide Modern Text' : 'Show Modern Text'}
+                    </button>
+                    <button
+                        onClick={handleExplainText}
+                        className="modernize-button"
+                    >
+                        Explain Selection
                     </button>
                     <button
                         onClick={handleNextSection}
@@ -393,6 +403,7 @@ const BookReader = () => {
                 </div>
             </div>
     
+            {/* Modernized Panel */}
             <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
                 <div className="panel-header">
                     <h3>Modern Translation</h3>
@@ -422,33 +433,37 @@ const BookReader = () => {
                 </div>
             </div>
     
-            {showExplanation && (
-                <div className={`explanation-panel ${showExplanation ? 'open' : ''}`}>
-                    <div className="panel-header">
-                        <h3>Explanation</h3>
-                        <button 
-                            onClick={() => setShowExplanation(false)} 
-                            className="close-panel-button"
-                        >
-                            ×
-                        </button>
-                    </div>
-                    <div className="panel-content">
-                        {isExplaining ? (
-                            <div className="loading-container">
-                                <div className="loading-spinner"></div>
-                                <p>Generating explanation...</p>
-                            </div>
-                        ) : (
-                            <div className="explanation-text">
-                                {explanation}
-                            </div>
-                        )}
-                    </div>
+            {/* Explanation Panel */}
+            <div className={`explanation-panel ${showExplanation ? 'open' : ''}`}>
+                <div className="panel-header">
+                    <h3>Text Explanation</h3>
+                    <button
+                        onClick={() => setShowExplanation(false)}
+                        className="close-panel-button"
+                        aria-label="Close panel"
+                    >
+                        ×
+                    </button>
                 </div>
-            )}
+                <div className="panel-content">
+                    {isExplaining ? (
+                        <div className="loading-container">
+                            <div className="loading-spinner"></div>
+                            <p>Analyzing text...</p>
+                        </div>
+                    ) : explanation ? (
+                        <div className="explanation-text">
+                            {explanation}
+                        </div>
+                    ) : (
+                        <div className="placeholder-text">
+                            Select text and click "Explain Selection" to see an explanation.
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
-}
+};    
 
 export default BookReader;

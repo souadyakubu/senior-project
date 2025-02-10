@@ -74,15 +74,24 @@ class ClaudeService {
                     {
                         role: 'user',
                         content: `Given this context - Book: "${contextData.bookTitle}" by ${contextData.author}
-                                 Please explain this passage in detail: "${text}"`
+    
+    Please provide a detailed explanation of this passage:
+    "${text}"
+    
+    Include:
+    1. The main meaning or message
+    2. Important context or background information
+    3. Any significant symbolism or literary devices
+    4. How it connects to the broader themes of the work
+    5. Any historical or cultural references that might not be obvious to modern readers`
                     }
                 ]
             });
-
+    
             if (response?.content?.[0]?.text) {
                 return response.content[0].text;
             }
-
+    
             throw new Error('Invalid response from Claude API');
         } catch (error) {
             console.error('Error in explainText:', error);
