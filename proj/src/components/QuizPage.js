@@ -14,6 +14,8 @@ const QuizPage = () => {
     const [quizHistory, setQuizHistory] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [attempts, setAttempts] = useState(0);
+
 
     const claudeService = new ClaudeService(process.env.REACT_APP_ANTHROPIC_API_KEY);
 
@@ -28,7 +30,7 @@ const QuizPage = () => {
             }
 
             const cleanContent = content.replace(/<[^>]+>/g, '');
-            
+
             const prompt = `Based on this text from ${bookTitle} by ${author}, section ${currentSection}: 
             "${cleanContent}"
             
@@ -44,6 +46,7 @@ const QuizPage = () => {
 
             if (response) {
                 setQuestion(response);
+                setAttempts(0); // Reset attempts for new question
             } else {
                 setError('Failed to fetch question.');
             }
@@ -70,23 +73,48 @@ const QuizPage = () => {
             setQuizHistory([...quizHistory, userResponse]);
 
             const cleanContent = content.replace(/<[^>]+>/g, '');
-            const evaluationPrompt = `Based on this text from ${bookTitle}: "${cleanContent}"
+            let evaluationPrompt;
 
-            The question was: ${question}
-            The user answered: ${userAnswer}
-
-            First, provide a brief, encouraging 1-2 sentence feedback on the answer.
-            Then, ask a new, simple question about a different part of the text.
-            Remember:
-            - New question must be under 30 words
-            - Focus on basic comprehension
-            - Use simple, clear language
-            - Only ask about one concept at a time
-            - The question should be answerable directly from the text`;
+            if (attempts < 2) {
+                evaluationPrompt = `Based on this text from ${bookTitle}: "${cleanContent}"
+    
+                The question was: ${question}
+                The user answered: ${userAnswer}
+    
+                First, provide a brief, encouraging 1-2 sentence feedback on the answer.
+                Then, if the answer is incorrect, ask the same question again.
+                if the answer is still wrong. Correct the user and provide the correct answer.
+                If the answer is correct, ask a new, simple question about a different part of the text.
+                Remember make it a diaglogue:
+                - New question must be under 30 words
+                - Focus on basic comprehension
+                - Use simple, clear language
+                - Only ask about one concept at a time
+                - The question should be answerable directly from the text`;
+            } else {
+                evaluationPrompt = `Based on this text from ${bookTitle}: "${cleanContent}"
+    
+                The question was: ${question}
+                The user answered: ${userAnswer}
+    
+                Provide a detailed explanation of the correct answer, including relevant information from the text.
+                Then, ask a new, simple question about a different part of the text.
+                Remember:
+                - New question must be under 30 words
+                - Focus on basic comprehension
+                - Use simple, clear language
+                - Only ask about one concept at a time
+                - The question should be answerable directly from the text`;
+            }
 
             const response = await claudeService.askQuestion(evaluationPrompt);
 
             if (response) {
+                if (attempts < 2) {
+                    setAttempts(attempts + 1);
+                } else {
+                    setAttempts(0);
+                }
                 setQuestion(response);
             } else {
                 setError('Failed to get next question.');
@@ -99,6 +127,7 @@ const QuizPage = () => {
             setUserAnswer('');
         }
     };
+
 
     const handleExit = () => {
         navigate(-1);
@@ -130,7 +159,7 @@ const QuizPage = () => {
                 <div className="quiz-container">
                     <div className="quiz-header">
                         <h1>Take the Quiz</h1>
-                        <button 
+                        <button
                             onClick={handleExit}
                             className="exit-button"
                             aria-label="Exit quiz"

@@ -5,6 +5,8 @@ import books from './Books';
 import './BookReader.css';
 import OpenAIService from '../services/openAIService';
 import ClaudeService from '../services/claudeService';
+import ChatBox from './ChatBox';
+
 
 const BookReader = () => {
     const { bookTitle } = useParams();
@@ -14,6 +16,7 @@ const BookReader = () => {
     const claudeService = new ClaudeService(process.env.REACT_APP_ANTHROPIC_API_KEY);
 
     // State Management
+    const [chatMessages, setChatMessages] = useState([]);
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -111,7 +114,7 @@ const BookReader = () => {
             const mainSection = parts[1];
             const subSection = parts[2];
             const cleanMainSection = parts[1];
-            
+
             if (subSection === 'ii') {
                 return `${baseUrl}/${book.urlName}.${cleanMainSection}.i.html`;
             }
@@ -210,13 +213,49 @@ const BookReader = () => {
         }
     };
 
+
+    const handleSendMessage = async (message) => {
+        try {
+            const context = {
+                previousMessages: chatMessages,
+                book: {
+                    title: book.title,
+                    author: book.author,
+                    currentSection: getCurrentSection(),
+                    currentContent: content
+                }
+            };
+
+            // Include the last message and response for context
+            const lastMessage = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null;
+            const contextualPrompt = `Current Book: ${book.title} by ${book.author}
+    Current Section: ${getCurrentSection()}
+    Previous Question: ${lastMessage ? lastMessage.text : 'N/A'}
+    Previous Answer: ${lastMessage ? lastMessage.response : 'N/A'}
+    
+    New Question: ${message}
+    
+    Please answer the new question taking into account the context of the book, current section, and previous conversation.`;
+
+            const response = await claudeService.askQuestion(contextualPrompt, context);
+            setChatMessages([...chatMessages, { text: message, response: response }]);
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    };
+
+
+
+
+
+
     const handleTextSelection = () => {
         const selection = window.getSelection();
         const text = selection.toString().trim();
         if (text) {
             const range = selection.getRangeAt(0);
             const rect = range.getBoundingClientRect();
-           
+
             setSelectedText(text);
             setSelectionPosition({
                 top: rect.top + window.scrollY,
@@ -254,21 +293,21 @@ const BookReader = () => {
         try {
             const selection = window.getSelection();
             const text = selection.toString().trim();
-    
+
             if (!text) {
                 return;
             }
-    
+
             setIsExplaining(true);
             setShowExplanation(true);
-    
+
             // Create context object with book info and current page content
             const contextData = {
                 bookTitle: book.title,
                 author: book.author,
                 pageContent: content.replace(/<[^>]+>/g, '') // Remove HTML tags from content
             };
-    
+
             const explainedText = await claudeService.explainText(text, contextData);
             setExplanation(explainedText);
         } catch (error) {
@@ -308,7 +347,7 @@ const BookReader = () => {
                     <p><strong>Author:</strong> {book.author}</p>
                     <p className="section-indicator">Section {getCurrentSection()}</p>
                 </div>
-    
+
                 <div className="navigation-controls">
                     <button
                         onClick={handlePreviousSection}
@@ -337,20 +376,20 @@ const BookReader = () => {
                         ▶
                     </button>
                 </div>
-    
+
                 {loading && (
                     <div className="loading-container">
                         <div className="loading-spinner"></div>
                         <p>Loading content...</p>
                     </div>
                 )}
-    
+
                 {error && (
                     <div className="error-message">
                         {error}
                     </div>
                 )}
-    
+
                 {!loading && !error && content && (
                     <div className="book-content">
                         <div
@@ -372,7 +411,7 @@ const BookReader = () => {
                         )}
                     </div>
                 )}
-    
+
                 <div className="navigation-controls bottom">
                     <button
                         onClick={handlePreviousSection}
@@ -384,10 +423,10 @@ const BookReader = () => {
                     <button
                         className="quiz-button"
                         onClick={() => navigate(`/quiz?section=${getCurrentSection()}`, {
-                            state: { 
+                            state: {
                                 content: content,
                                 bookTitle: book.title,
-                                author: book.author 
+                                author: book.author
                             }
                         })}
                     >
@@ -402,7 +441,7 @@ const BookReader = () => {
                     </button>
                 </div>
             </div>
-    
+
             {/* Modernized Panel */}
             <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
                 <div className="panel-header">
@@ -423,7 +462,22 @@ const BookReader = () => {
                         </div>
                     ) : modernizedContent ? (
                         <div className="modernized-text">
-                            {modernizedContent}
+                            <p>{modernizedContent}</p>
+                            {isPanelOpen && (
+                                <ChatBox
+                                    onSendMessage={handleSendMessage}
+                                    claudeService={claudeService}
+                                    messages={chatMessages}
+                                    bookContext={{
+                                        title: book.title,
+                                        author: book.author,
+                                        currentSection: getCurrentSection(),
+                                        currentContent: content
+                                    }}
+                                />
+
+
+                            )}
                         </div>
                     ) : (
                         <div className="placeholder-text">
@@ -431,8 +485,9 @@ const BookReader = () => {
                         </div>
                     )}
                 </div>
+
             </div>
-    
+
             {/* Explanation Panel */}
             <div className={`explanation-panel ${showExplanation ? 'open' : ''}`}>
                 <div className="panel-header">
@@ -464,6 +519,6 @@ const BookReader = () => {
             </div>
         </div>
     );
-};    
+};
 
 export default BookReader;

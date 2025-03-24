@@ -87,11 +87,11 @@ class ClaudeService {
                     }
                 ]
             });
-    
+
             if (response?.content?.[0]?.text) {
                 return response.content[0].text;
             }
-    
+
             throw new Error('Invalid response from Claude API');
         } catch (error) {
             console.error('Error in explainText:', error);

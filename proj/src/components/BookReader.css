@@ -329,11 +329,16 @@
 
 .explanation-panel {
   position: fixed;
-  bottom: 0;  /* Changed from top: 0 to bottom: 0 */
-  left: 0;    /* Changed from right positioning to left */
-  width: 100%; /* Full width instead of fixed 400px */
-  height: 300px; /* Fixed height instead of 100vh */
-  background-color: #1a1a1a; /* Dark background to match your theme */
+  bottom: 0;
+  /* Changed from top: 0 to bottom: 0 */
+  left: 0;
+  /* Changed from right positioning to left */
+  width: 100%;
+  /* Full width instead of fixed 400px */
+  height: 300px;
+  /* Fixed height instead of 100vh */
+  background-color: #1a1a1a;
+  /* Dark background to match your theme */
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease;
   transform: translateY(100%);
