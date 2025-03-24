@@ -11,6 +11,7 @@ class ClaudeService {
         });
     }
 
+    //question asking
     async askQuestion(question) {
         try {
             const response = await this.anthropic.messages.create({
