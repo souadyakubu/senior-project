@@ -5,6 +5,8 @@ import books from './Books';
 import './BookReader.css';
 import OpenAIService from '../services/openAIService';
 import ClaudeService from '../services/claudeService';
+import ChatBox from './ChatBox';
+
 
 // Import PDF.js directly for text extraction only
 import * as pdfjs from 'pdfjs-dist';
@@ -159,6 +161,8 @@ const BookReader = () => {
     const book = !isPdf 
     ? (isCCELSearch ? ccelBook : books.find(b => b.title === decodeURIComponent(bookTitle)))
     : null;
+    // State Management
+    const [chatMessages, setChatMessages] = useState([]);
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -303,7 +307,7 @@ const BookReader = () => {
             const mainSection = parts[1];
             const subSection = parts[2];
             const cleanMainSection = parts[1];
-            
+
             if (subSection === 'ii') {
                 return `${baseUrl}/${book.urlName}.${cleanMainSection}.i.html`;
             }
@@ -432,13 +436,49 @@ const BookReader = () => {
         }
     };
 
+
+    const handleSendMessage = async (message) => {
+        try {
+            const context = {
+                previousMessages: chatMessages,
+                book: {
+                    title: book.title,
+                    author: book.author,
+                    currentSection: getCurrentSection(),
+                    currentContent: content
+                }
+            };
+
+            // Include the last message and response for context
+            const lastMessage = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null;
+            const contextualPrompt = `Current Book: ${book.title} by ${book.author}
+    Current Section: ${getCurrentSection()}
+    Previous Question: ${lastMessage ? lastMessage.text : 'N/A'}
+    Previous Answer: ${lastMessage ? lastMessage.response : 'N/A'}
+    
+    New Question: ${message}
+    
+    Please answer the new question taking into account the context of the book, current section, and previous conversation.`;
+
+            const response = await claudeService.askQuestion(contextualPrompt, context);
+            setChatMessages([...chatMessages, { text: message, response: response }]);
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    };
+
+
+
+
+
+
     const handleTextSelection = () => {
         const selection = window.getSelection();
         const text = selection.toString().trim();
         if (text) {
             const range = selection.getRangeAt(0);
             const rect = range.getBoundingClientRect();
-           
+
             setSelectedText(text);
             setSelectionPosition({
                 top: rect.top + window.scrollY,
@@ -470,21 +510,21 @@ const BookReader = () => {
         try {
             const selection = window.getSelection();
             const text = selection.toString().trim();
-    
+
             if (!text) {
                 return;
             }
-    
+
             setIsExplaining(true);
             setShowExplanation(true);
-    
+
             // Create context object with book info and current page content
             const contextData = {
                 bookTitle: isPdf ? pdfName : book?.title,
                 author: isPdf ? 'Unknown' : book?.author,
                 pageContent: isPdf ? pdfText : content.replace(/<[^>]+>/g, '') // Remove HTML tags from content
             };
-    
+
             const explainedText = await claudeService.explainText(text, contextData);
             setExplanation(explainedText);
         } catch (error) {
@@ -560,7 +600,7 @@ const BookReader = () => {
                     {!isPdf && book && <p><strong>Author:</strong> {book.author}</p>}
                     <p className="section-indicator">{getCurrentSection()}</p>
                 </div>
-    
+
                 <div className="navigation-controls">
                     <button
                         onClick={handlePreviousSection}
@@ -595,14 +635,14 @@ const BookReader = () => {
                         ▶
                     </button>
                 </div>
-    
-                {loading && !isPdf && (
+
+                {loading && (
                     <div className="loading-container">
                         <div className="loading-spinner"></div>
                         <p>Loading content...</p>
                     </div>
                 )}
-    
+
                 {error && (
                     <div className="error-message">
                         {error}
@@ -676,7 +716,7 @@ const BookReader = () => {
                     </button>
                 </div>
             </div>
-    
+
             {/* Modernized Panel */}
             <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
                 <div className="panel-header">
@@ -696,15 +736,31 @@ const BookReader = () => {
                             <p>Modernizing text...</p>
                         </div>
                     ) : modernizedContent ? (
-                        <FormatModernizedText text={modernizedContent} />
+                        <>
+                            <FormatModernizedText text={modernizedContent} />
+                            {isPanelOpen && (
+                                <ChatBox
+                                    onSendMessage={handleSendMessage}
+                                    claudeService={claudeService}
+                                    messages={chatMessages}
+                                    bookContext={{
+                                        title: book?.title,  // Add optional chaining for safety
+                                        author: book?.author,
+                                        currentSection: getCurrentSection(),
+                                        currentContent: content
+                                    }}
+                                />
+                            )}
+                        </>
                     ) : (
                         <div className="placeholder-text">
                             Click "Modernize" to see the modern translation of the text.
                         </div>
                     )}
                 </div>
+
             </div>
-    
+
             {/* Explanation Panel */}
             <div className={`explanation-panel ${showExplanation ? 'open' : ''}`}>
                 <div className="panel-header">
@@ -762,6 +818,6 @@ const BookReader = () => {
             </div>
         </div>
     );
-};    
+};
 
 export default BookReader;

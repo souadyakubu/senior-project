@@ -1,17 +1,54 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Sidebar.css';
+import books from './Books';
+
 
 const Sidebar = () => {
     const navigate = useNavigate();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
 
     const handleNavigation = (path) => {
         navigate(path);
     };
 
+    const handleSearch = (event) => {
+        const term = event.target.value;
+        setSearchTerm(term);
+
+        const filteredBooks = books.filter(book =>
+            book.title.toLowerCase().includes(term.toLowerCase()) ||
+            book.author.toLowerCase().includes(term.toLowerCase())
+        );
+
+        setSearchResults(filteredBooks);
+    };
+
     return (
         <div className="sidebar">
-            <input type="text" className="search" placeholder="Search" />
+            <input
+                type="text"
+                className="search"
+                placeholder="Search"
+                value={searchTerm}
+                onChange={handleSearch}
+            />
+            {searchTerm && (
+                <div className="search-results">
+                    {searchResults.length > 0 ? (
+                        <ul>
+                            {searchResults.map((book, index) => (
+                                <li key={index} onClick={() => handleNavigation(`/book/${book.urlName}`)}>
+                                    {book.title} by {book.author}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>No results found</p>
+                    )}
+                </div>
+            )}
             <nav>
                 <ul>
                     <li onClick={() => handleNavigation('/')}><i className="fas fa-home"></i> Home</li>
@@ -25,5 +62,4 @@ const Sidebar = () => {
         </div>
     );
 };
-
 export default Sidebar;
