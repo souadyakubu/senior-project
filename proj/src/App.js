@@ -5,6 +5,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 import Sidebar from './components/Sidebar';
 import BookSection from './components/BookSection';
 import BookReader from './components/BookReader';
+import PDFUploadSection from './components/PDFUploadSection';
+import CCELSearch from './components/CCELSearch';
 import books from './components/Books';
 import Login from './components/Login';
 import Signup from './components/Signup';
@@ -55,12 +57,14 @@ function App() {
                   element={
                     <>
                       <h1>Home</h1>
-                      <BookSection title="The Collection" books={books} />
+                      <PDFUploadSection />
+                      <CCELSearch /> {/* Add the CCEL Search component */}
+                      <BookSection title="Your Library" books={books} />
                     </>
                   }
                 />
                 <Route path="/book/:bookTitle" element={<BookReader />} />
-                <Route path="/quiz" element={<QuizPage />} /> {/* Added the Quiz route for logged-in users */}
+                <Route path="/quiz" element={<QuizPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
