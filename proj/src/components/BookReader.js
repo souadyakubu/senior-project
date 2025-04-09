@@ -161,24 +161,31 @@ const BookReader = () => {
     const book = !isPdf 
     ? (isCCELSearch ? ccelBook : books.find(b => b.title === decodeURIComponent(bookTitle)))
     : null;
-    // State Management
+    
+    // Updated state for panels
     const [chatMessages, setChatMessages] = useState([]);
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentUrl, setCurrentUrl] = useState(null);
     const [isLastPage, setIsLastPage] = useState(false);
+    
+    // Panel state
     const [isPanelOpen, setIsPanelOpen] = useState(false);
+    const [isExplanationPanelOpen, setIsExplanationPanelOpen] = useState(false);
+    const [isHistoricalContextOpen, setIsHistoricalContextOpen] = useState(false);
+    
+    // Content state
     const [isModernizing, setIsModernizing] = useState(false);
     const [modernizedContent, setModernizedContent] = useState('');
     const [explanation, setExplanation] = useState('');
     const [isExplaining, setIsExplaining] = useState(false);
-    const [showExplanation, setShowExplanation] = useState(false);
-    const [selectedText, setSelectedText] = useState('');
-    const [selectionPosition, setSelectionPosition] = useState(null);
     const [contextInfo, setContextInfo] = useState('');
     const [isLoadingContext, setIsLoadingContext] = useState(false);
-    const [showContext, setShowContext] = useState(false);
+    
+    // Selection state
+    const [selectedText, setSelectedText] = useState('');
+    const [selectionPosition, setSelectionPosition] = useState(null);
 
     // Console log PDF info for debugging
     useEffect(() => {
@@ -400,21 +407,31 @@ const BookReader = () => {
         return section.replace('.', '');
     };
 
-    // Fixed togglePanel function
+    // Updated togglePanel function for modernize panel
     const togglePanel = () => {
-        setIsPanelOpen(!isPanelOpen);
-        if (!isPanelOpen && !modernizedContent && !isModernizing) {
-            handleModernizeText();
+        const newPanelState = !isPanelOpen;
+        setIsPanelOpen(newPanelState);
+        
+        // Close other panels when opening this one
+        if (newPanelState) {
+            setIsExplanationPanelOpen(false);
+            setIsHistoricalContextOpen(false);
         }
         
-        // Toggle the class on the container element
+        // Add/remove CSS class for layout adjustment
         const container = document.querySelector('.book-reader-container');
         if (container) {
-            if (!isPanelOpen) {
+            if (newPanelState) {
                 container.classList.add('with-panel');
+                container.classList.remove('with-explanation', 'with-historical-context');
             } else {
                 container.classList.remove('with-panel');
             }
+        }
+        
+        // Trigger content loading if panel is being opened
+        if (newPanelState && !modernizedContent && !isModernizing) {
+            handleModernizeText();
         }
     };
 
@@ -436,6 +453,103 @@ const BookReader = () => {
         }
     };
 
+    // Updated handleExplainText function for side panel
+    const handleExplainText = async () => {
+        try {
+            const selection = window.getSelection();
+            const text = selection.toString().trim();
+
+            if (!text) {
+                return;
+            }
+
+            // Close other panels and open explanation panel
+            setIsPanelOpen(false);
+            setIsHistoricalContextOpen(false);
+            setIsExplanationPanelOpen(true);
+            
+            // Update CSS classes for layout
+            const container = document.querySelector('.book-reader-container');
+            if (container) {
+                container.classList.remove('with-panel', 'with-historical-context');
+                container.classList.add('with-explanation');
+            }
+
+            setIsExplaining(true);
+            
+            // Create context object with book info and current page content
+            const contextData = {
+                bookTitle: isPdf ? pdfName : book?.title,
+                author: isPdf ? 'Unknown' : book?.author,
+                pageContent: isPdf ? pdfText : content.replace(/<[^>]+>/g, '') // Remove HTML tags from content
+            };
+
+            const explainedText = await claudeService.explainText(text, contextData);
+            setExplanation(explainedText);
+        } catch (error) {
+            console.error('Error explaining text:', error);
+            setError('Failed to explain text. Please try again.');
+        } finally {
+            setIsExplaining(false);
+        }
+    };
+
+    // Function to close explanation panel
+    const closeExplanationPanel = () => {
+        setIsExplanationPanelOpen(false);
+        
+        // Remove CSS class
+        const container = document.querySelector('.book-reader-container');
+        if (container) {
+            container.classList.remove('with-explanation');
+        }
+    };
+
+    // Update handleShowContext function for historical context
+    const handleShowContext = async () => {
+        try {
+            // Close other panels and open historical context panel
+            setIsPanelOpen(false);
+            setIsExplanationPanelOpen(false);
+            setIsHistoricalContextOpen(true);
+            
+            // Update CSS classes for layout
+            const container = document.querySelector('.book-reader-container');
+            if (container) {
+                container.classList.remove('with-panel', 'with-explanation');
+                container.classList.add('with-historical-context');
+            }
+            
+            setIsLoadingContext(true);
+            
+            // Create the prompt for context
+            const contextData = {
+                bookTitle: isPdf ? pdfName : book?.title,
+                author: isPdf ? 'Unknown' : book?.author,
+                yearPublished: book?.yearPublished || 'unknown year'
+            };
+            
+            // Use Claude to get historical context
+            const contextResponse = await claudeService.getHistoricalContext(contextData);
+            setContextInfo(contextResponse);
+        } catch (error) {
+            console.error('Error getting historical context:', error);
+            setContextInfo('Unable to retrieve historical context information. Please try again.');
+        } finally {
+            setIsLoadingContext(false);
+        }
+    };
+
+    // Function to close historical context panel
+    const closeHistoricalContextPanel = () => {
+        setIsHistoricalContextOpen(false);
+        
+        // Remove CSS class
+        const container = document.querySelector('.book-reader-container');
+        if (container) {
+            container.classList.remove('with-historical-context');
+        }
+    };
 
     const handleSendMessage = async (message) => {
         try {
@@ -467,11 +581,6 @@ const BookReader = () => {
         }
     };
 
-
-
-
-
-
     const handleTextSelection = () => {
         const selection = window.getSelection();
         const text = selection.toString().trim();
@@ -493,9 +602,21 @@ const BookReader = () => {
     const handleModernizeSelection = async () => {
         try {
             setIsModernizing(true);
+            
+            // Close other panels and open modernize panel
+            setIsExplanationPanelOpen(false);
+            setIsHistoricalContextOpen(false);
+            setIsPanelOpen(true);
+            
+            // Update CSS classes for layout
+            const container = document.querySelector('.book-reader-container');
+            if (container) {
+                container.classList.remove('with-explanation', 'with-historical-context');
+                container.classList.add('with-panel');
+            }
+            
             const modernizedText = await claudeService.modernizeText(selectedText);
             setModernizedContent(modernizedText);
-            setIsPanelOpen(true);
             setSelectedText('');
             setSelectionPosition(null);
         } catch (error) {
@@ -503,58 +624,6 @@ const BookReader = () => {
             setError('Failed to modernize text. Please try again.');
         } finally {
             setIsModernizing(false);
-        }
-    };
-
-    const handleExplainText = async () => {
-        try {
-            const selection = window.getSelection();
-            const text = selection.toString().trim();
-
-            if (!text) {
-                return;
-            }
-
-            setIsExplaining(true);
-            setShowExplanation(true);
-
-            // Create context object with book info and current page content
-            const contextData = {
-                bookTitle: isPdf ? pdfName : book?.title,
-                author: isPdf ? 'Unknown' : book?.author,
-                pageContent: isPdf ? pdfText : content.replace(/<[^>]+>/g, '') // Remove HTML tags from content
-            };
-
-            const explainedText = await claudeService.explainText(text, contextData);
-            setExplanation(explainedText);
-        } catch (error) {
-            console.error('Error explaining text:', error);
-            setError('Failed to explain text. Please try again.');
-        } finally {
-            setIsExplaining(false);
-        }
-    };
-
-    const handleShowContext = async () => {
-        try {
-            setIsLoadingContext(true);
-            setShowContext(true);
-            
-            // Create the prompt for context
-            const contextData = {
-                bookTitle: isPdf ? pdfName : book?.title,
-                author: isPdf ? 'Unknown' : book?.author,
-                yearPublished: book?.yearPublished || 'unknown year'
-            };
-            
-            // Use Claude to get historical context
-            const contextResponse = await claudeService.getHistoricalContext(contextData);
-            setContextInfo(contextResponse);
-        } catch (error) {
-            console.error('Error getting historical context:', error);
-            setContextInfo('Unable to retrieve historical context information. Please try again.');
-        } finally {
-            setIsLoadingContext(false);
         }
     };
 
@@ -593,7 +662,7 @@ const BookReader = () => {
     }
 
     return (
-        <div className={`book-reader-container ${isPanelOpen ? 'with-panel' : ''}`}>
+        <div className={`book-reader-container ${isPanelOpen ? 'with-panel' : ''} ${isExplanationPanelOpen ? 'with-explanation' : ''} ${isHistoricalContextOpen ? 'with-historical-context' : ''}`}>
             <div className="book-reader">
                 <div className="book-header">
                     <h2>{isPdf ? pdfName : book?.title}</h2>
@@ -718,7 +787,7 @@ const BookReader = () => {
             </div>
 
             {/* Modernized Panel */}
-            <div className={`modernized-panel ${isPanelOpen ? 'open' : ''}`}>
+            <div className={`modernized-panel side-panel ${isPanelOpen ? 'open' : ''}`}>
                 <div className="panel-header">
                     <h3>Modern Translation</h3>
                     <button
@@ -744,7 +813,7 @@ const BookReader = () => {
                                     claudeService={claudeService}
                                     messages={chatMessages}
                                     bookContext={{
-                                        title: book?.title,  // Add optional chaining for safety
+                                        title: book?.title,
                                         author: book?.author,
                                         currentSection: getCurrentSection(),
                                         currentContent: content
@@ -758,15 +827,14 @@ const BookReader = () => {
                         </div>
                     )}
                 </div>
-
             </div>
 
             {/* Explanation Panel */}
-            <div className={`explanation-panel ${showExplanation ? 'open' : ''}`}>
+            <div className={`explanation-panel side-panel ${isExplanationPanelOpen ? 'open' : ''}`}>
                 <div className="panel-header">
                     <h3>Text Explanation</h3>
                     <button
-                        onClick={() => setShowExplanation(false)}
+                        onClick={closeExplanationPanel}
                         className="close-panel-button"
                         aria-label="Close panel"
                     >
@@ -790,12 +858,15 @@ const BookReader = () => {
             </div>
 
             {/* Historical Context Panel */}
-            <div className={`explanation-panel ${showContext ? 'open' : ''}`}>
+            <div className={`historical-context-panel side-panel ${isHistoricalContextOpen ? 'open' : ''}`}>
                 <div className="panel-header">
                     <h3>Historical Context</h3>
                     <button
-                        onClick={() => setShowContext(false)}
+                        onClick={closeHistoricalContextPanel}
                         className="close-panel-button"
+                        aria-label="Close panel"
+                    >
+                        ×
                         aria-label="Close panel"
                     >
                         ×
