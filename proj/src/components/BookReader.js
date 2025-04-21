@@ -867,9 +867,6 @@ const BookReader = () => {
                         aria-label="Close panel"
                     >
                         ×
-                        aria-label="Close panel"
-                    >
-                        ×
                     </button>
                 </div>
                 <div className="panel-content">
