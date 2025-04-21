@@ -15,133 +15,133 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/$
 // Enhanced text formatting components defined outside the main component
 // Component for explanation text formatting
 const FormatExplanation = ({ text }) => {
-  if (!text) return null;
-  
-  // Regular expression to identify numbered sections (1., 2., etc.)
-  const processText = (content) => {
-    // Split by double newlines or numbered pattern
-    // This approach handles Claude's typical formatting better
-    const lines = content.split(/\n+/);
-    const result = [];
-    let currentNumberedSection = null;
-    let currentSectionContent = [];
-    
-    lines.forEach((line, i) => {
-      // Check if this line starts a new numbered section
-      const numberMatch = line.match(/^(\d+)\.\s*(.*)/);
-      
-      if (numberMatch) {
-        // If we have content from a previous section, add it
+    if (!text) return null;
+
+    // Regular expression to identify numbered sections (1., 2., etc.)
+    const processText = (content) => {
+        // Split by double newlines or numbered pattern
+        // This approach handles Claude's typical formatting better
+        const lines = content.split(/\n+/);
+        const result = [];
+        let currentNumberedSection = null;
+        let currentSectionContent = [];
+
+        lines.forEach((line, i) => {
+            // Check if this line starts a new numbered section
+            const numberMatch = line.match(/^(\d+)\.\s*(.*)/);
+
+            if (numberMatch) {
+                // If we have content from a previous section, add it
+                if (currentNumberedSection !== null) {
+                    result.push(
+                        <p key={`section-${currentNumberedSection}`}>
+                            <strong>{currentNumberedSection}. </strong>
+                            {currentSectionContent.join(' ')}
+                        </p>
+                    );
+                    currentSectionContent = [];
+                }
+
+                // Start a new numbered section
+                currentNumberedSection = numberMatch[1];
+                currentSectionContent.push(numberMatch[2]);
+            }
+            else if (currentNumberedSection !== null) {
+                // Continue existing numbered section
+                currentSectionContent.push(line);
+            }
+            else {
+                // Regular paragraph
+                result.push(<p key={`para-${i}`}>{line}</p>);
+            }
+        });
+
+        // Add the final section if there is one
         if (currentNumberedSection !== null) {
-          result.push(
-            <p key={`section-${currentNumberedSection}`}>
-              <strong>{currentNumberedSection}. </strong>
-              {currentSectionContent.join(' ')}
-            </p>
-          );
-          currentSectionContent = [];
+            result.push(
+                <p key={`section-${currentNumberedSection}`}>
+                    <strong>{currentNumberedSection}. </strong>
+                    {currentSectionContent.join(' ')}
+                </p>
+            );
         }
-        
-        // Start a new numbered section
-        currentNumberedSection = numberMatch[1];
-        currentSectionContent.push(numberMatch[2]);
-      } 
-      else if (currentNumberedSection !== null) {
-        // Continue existing numbered section
-        currentSectionContent.push(line);
-      } 
-      else {
-        // Regular paragraph
-        result.push(<p key={`para-${i}`}>{line}</p>);
-      }
-    });
-    
-    // Add the final section if there is one
-    if (currentNumberedSection !== null) {
-      result.push(
-        <p key={`section-${currentNumberedSection}`}>
-          <strong>{currentNumberedSection}. </strong>
-          {currentSectionContent.join(' ')}
-        </p>
-      );
-    }
-    
-    return result;
-  };
-  
-  return <div className="explanation-text">{processText(text)}</div>;
+
+        return result;
+    };
+
+    return <div className="explanation-text">{processText(text)}</div>;
 };
 
 // Component for historical context formatting - similar approach
 const FormatHistoricalContext = ({ text }) => {
-  if (!text) return null;
-  
-  // Similar processing to explanation formatting
-  const processText = (content) => {
-    const lines = content.split(/\n+/);
-    const result = [];
-    let currentNumberedSection = null;
-    let currentSectionContent = [];
-    
-    lines.forEach((line, i) => {
-      const numberMatch = line.match(/^(\d+)\.\s*(.*)/);
-      
-      if (numberMatch) {
+    if (!text) return null;
+
+    // Similar processing to explanation formatting
+    const processText = (content) => {
+        const lines = content.split(/\n+/);
+        const result = [];
+        let currentNumberedSection = null;
+        let currentSectionContent = [];
+
+        lines.forEach((line, i) => {
+            const numberMatch = line.match(/^(\d+)\.\s*(.*)/);
+
+            if (numberMatch) {
+                if (currentNumberedSection !== null) {
+                    result.push(
+                        <p key={`section-${currentNumberedSection}`}>
+                            <strong>{currentNumberedSection}. </strong>
+                            {currentSectionContent.join(' ')}
+                        </p>
+                    );
+                    currentSectionContent = [];
+                }
+
+                currentNumberedSection = numberMatch[1];
+                currentSectionContent.push(numberMatch[2]);
+            }
+            else if (currentNumberedSection !== null) {
+                currentSectionContent.push(line);
+            }
+            else {
+                result.push(<p key={`para-${i}`}>{line}</p>);
+            }
+        });
+
         if (currentNumberedSection !== null) {
-          result.push(
-            <p key={`section-${currentNumberedSection}`}>
-              <strong>{currentNumberedSection}. </strong>
-              {currentSectionContent.join(' ')}
-            </p>
-          );
-          currentSectionContent = [];
+            result.push(
+                <p key={`section-${currentNumberedSection}`}>
+                    <strong>{currentNumberedSection}. </strong>
+                    {currentSectionContent.join(' ')}
+                </p>
+            );
         }
-        
-        currentNumberedSection = numberMatch[1];
-        currentSectionContent.push(numberMatch[2]);
-      } 
-      else if (currentNumberedSection !== null) {
-        currentSectionContent.push(line);
-      } 
-      else {
-        result.push(<p key={`para-${i}`}>{line}</p>);
-      }
-    });
-    
-    if (currentNumberedSection !== null) {
-      result.push(
-        <p key={`section-${currentNumberedSection}`}>
-          <strong>{currentNumberedSection}. </strong>
-          {currentSectionContent.join(' ')}
-        </p>
-      );
-    }
-    
-    return result;
-  };
-  
-  return <div className="explanation-text">{processText(text)}</div>;
+
+        return result;
+    };
+
+    return <div className="explanation-text">{processText(text)}</div>;
 };
 
 // Component for modernized text formatting
 const FormatModernizedText = ({ text }) => {
-  if (!text) return null;
-  
-  // Split by newlines to preserve paragraph structure
-  const paragraphs = text.split(/\n\n+/);
-  
-  return (
-    <div className="modernized-text">
-      {paragraphs.map((paragraph, index) => (
-        <p key={index}>{paragraph}</p>
-      ))}
-    </div>
-  );
+    if (!text) return null;
+
+    // Split by newlines to preserve paragraph structure
+    const paragraphs = text.split(/\n\n+/);
+
+    return (
+        <div className="modernized-text">
+            {paragraphs.map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+            ))}
+        </div>
+    );
 };
 
 // Main BookReader component
 const BookReader = () => {
-    const { bookTitle } = useParams(); 
+    const { bookTitle } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
     const openAIService = new OpenAIService(process.env.REACT_APP_OPENAI_API_KEY);
@@ -158,10 +158,10 @@ const BookReader = () => {
     const pdfName = location.state?.fileName;
 
     // Existing state
-    const book = !isPdf 
-    ? (isCCELSearch ? ccelBook : books.find(b => b.title === decodeURIComponent(bookTitle)))
-    : null;
-    
+    const book = !isPdf
+        ? (isCCELSearch ? ccelBook : books.find(b => b.title === decodeURIComponent(bookTitle)))
+        : null;
+
     // Updated state for panels
     const [chatMessages, setChatMessages] = useState([]);
     const [content, setContent] = useState('');
@@ -169,12 +169,12 @@ const BookReader = () => {
     const [error, setError] = useState(null);
     const [currentUrl, setCurrentUrl] = useState(null);
     const [isLastPage, setIsLastPage] = useState(false);
-    
+
     // Panel state
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [isExplanationPanelOpen, setIsExplanationPanelOpen] = useState(false);
     const [isHistoricalContextOpen, setIsHistoricalContextOpen] = useState(false);
-    
+
     // Content state
     const [isModernizing, setIsModernizing] = useState(false);
     const [modernizedContent, setModernizedContent] = useState('');
@@ -182,7 +182,8 @@ const BookReader = () => {
     const [isExplaining, setIsExplaining] = useState(false);
     const [contextInfo, setContextInfo] = useState('');
     const [isLoadingContext, setIsLoadingContext] = useState(false);
-    
+    const [showExplanation, setShowExplanation] = useState(false); // Added from paste 2
+
     // Selection state
     const [selectedText, setSelectedText] = useState('');
     const [selectionPosition, setSelectionPosition] = useState(null);
@@ -361,6 +362,44 @@ const BookReader = () => {
         }
     };
 
+    // Generate a unique storage key for chat messages - ADDED FROM PASTE 2
+    const getChatStorageKey = (url) => {
+        if (!url || !book) return null;
+        const section = url.split('/').pop().replace('.html', '');
+        return `chat_${book.title}_${section}`.replace(/\s+/g, '_').toLowerCase();
+    };
+
+    // Load saved chat messages from localStorage - ADDED FROM PASTE 2
+    const loadSavedChats = (url) => {
+        const storageKey = getChatStorageKey(url);
+        if (!storageKey) return;
+
+        try {
+            const savedChats = localStorage.getItem(storageKey);
+            if (savedChats) {
+                setChatMessages(JSON.parse(savedChats));
+            } else {
+                // Reset chat messages if no saved chats found for this section
+                setChatMessages([]);
+            }
+        } catch (err) {
+            console.error('Error loading saved chats:', err);
+            setChatMessages([]);
+        }
+    };
+
+    // Save chat messages to localStorage - ADDED FROM PASTE 2
+    const saveChatsToLocalStorage = (messages, url) => {
+        const storageKey = getChatStorageKey(url);
+        if (!storageKey) return;
+
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(messages));
+        } catch (err) {
+            console.error('Error saving chats to local storage:', err);
+        }
+    };
+
     // Navigation functions for both PDF and regular books
     const handleNextSection = async () => {
         if (isPdf) {
@@ -374,6 +413,8 @@ const BookReader = () => {
                 setCurrentUrl(nextUrl);
                 await loadContent(nextUrl);
                 window.scrollTo(0, 0);
+                // Load saved chats for the new section - ADDED FROM PASTE 2
+                loadSavedChats(nextUrl);
             } else {
                 setIsLastPage(true);
             }
@@ -393,6 +434,8 @@ const BookReader = () => {
                 setCurrentUrl(prevUrl);
                 await loadContent(prevUrl);
                 window.scrollTo(0, 0);
+                // Load saved chats for the previous section - ADDED FROM PASTE 2
+                loadSavedChats(prevUrl);
             }
             setLoading(false);
         }
@@ -401,7 +444,7 @@ const BookReader = () => {
     const getCurrentSection = () => {
         if (isPdf) {
             return `Page ${pageNumber} of ${numPages || '?'}`;
-        } 
+        }
         if (!currentUrl) return '';
         const section = currentUrl.split('/').pop().replace('.html', '');
         return section.replace('.', '');
@@ -411,13 +454,14 @@ const BookReader = () => {
     const togglePanel = () => {
         const newPanelState = !isPanelOpen;
         setIsPanelOpen(newPanelState);
-        
+
         // Close other panels when opening this one
         if (newPanelState) {
             setIsExplanationPanelOpen(false);
             setIsHistoricalContextOpen(false);
+            setShowExplanation(false); // ADDED FROM PASTE 2
         }
-        
+
         // Add/remove CSS class for layout adjustment
         const container = document.querySelector('.book-reader-container');
         if (container) {
@@ -428,7 +472,7 @@ const BookReader = () => {
                 container.classList.remove('with-panel');
             }
         }
-        
+
         // Trigger content loading if panel is being opened
         if (newPanelState && !modernizedContent && !isModernizing) {
             handleModernizeText();
@@ -439,10 +483,10 @@ const BookReader = () => {
     const handleModernizeText = async () => {
         try {
             setIsModernizing(true);
-            const textToModernize = isPdf 
-                ? pdfText 
+            const textToModernize = isPdf
+                ? pdfText
                 : content.replace(/<[^>]+>/g, '');
-                
+
             const modernizedText = await claudeService.modernizeText(textToModernize);
             setModernizedContent(modernizedText);
         } catch (error) {
@@ -451,6 +495,13 @@ const BookReader = () => {
         } finally {
             setIsModernizing(false);
         }
+    };
+
+    // Debug function to log selected text - ADDED FROM PASTE 2
+    const handleLogText = () => {
+        const selection = window.getSelection();
+        const text = selection.toString().trim();
+        console.log('Selected text:', text);
     };
 
     // Updated handleExplainText function for side panel
@@ -467,7 +518,8 @@ const BookReader = () => {
             setIsPanelOpen(false);
             setIsHistoricalContextOpen(false);
             setIsExplanationPanelOpen(true);
-            
+            setShowExplanation(true); // ADDED FROM PASTE 2
+
             // Update CSS classes for layout
             const container = document.querySelector('.book-reader-container');
             if (container) {
@@ -476,7 +528,7 @@ const BookReader = () => {
             }
 
             setIsExplaining(true);
-            
+
             // Create context object with book info and current page content
             const contextData = {
                 bookTitle: isPdf ? pdfName : book?.title,
@@ -497,7 +549,8 @@ const BookReader = () => {
     // Function to close explanation panel
     const closeExplanationPanel = () => {
         setIsExplanationPanelOpen(false);
-        
+        setShowExplanation(false); // ADDED FROM PASTE 2
+
         // Remove CSS class
         const container = document.querySelector('.book-reader-container');
         if (container) {
@@ -511,24 +564,25 @@ const BookReader = () => {
             // Close other panels and open historical context panel
             setIsPanelOpen(false);
             setIsExplanationPanelOpen(false);
+            setShowExplanation(false); // ADDED FROM PASTE 2
             setIsHistoricalContextOpen(true);
-            
+
             // Update CSS classes for layout
             const container = document.querySelector('.book-reader-container');
             if (container) {
                 container.classList.remove('with-panel', 'with-explanation');
                 container.classList.add('with-historical-context');
             }
-            
+
             setIsLoadingContext(true);
-            
+
             // Create the prompt for context
             const contextData = {
                 bookTitle: isPdf ? pdfName : book?.title,
                 author: isPdf ? 'Unknown' : book?.author,
                 yearPublished: book?.yearPublished || 'unknown year'
             };
-            
+
             // Use Claude to get historical context
             const contextResponse = await claudeService.getHistoricalContext(contextData);
             setContextInfo(contextResponse);
@@ -543,7 +597,7 @@ const BookReader = () => {
     // Function to close historical context panel
     const closeHistoricalContextPanel = () => {
         setIsHistoricalContextOpen(false);
-        
+
         // Remove CSS class
         const container = document.querySelector('.book-reader-container');
         if (container) {
@@ -556,8 +610,8 @@ const BookReader = () => {
             const context = {
                 previousMessages: chatMessages,
                 book: {
-                    title: book.title,
-                    author: book.author,
+                    title: book?.title || pdfName,
+                    author: book?.author || 'Unknown',
                     currentSection: getCurrentSection(),
                     currentContent: content
                 }
@@ -565,7 +619,7 @@ const BookReader = () => {
 
             // Include the last message and response for context
             const lastMessage = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null;
-            const contextualPrompt = `Current Book: ${book.title} by ${book.author}
+            const contextualPrompt = `Current Book: ${book?.title || pdfName} by ${book?.author || 'Unknown'}
     Current Section: ${getCurrentSection()}
     Previous Question: ${lastMessage ? lastMessage.text : 'N/A'}
     Previous Answer: ${lastMessage ? lastMessage.response : 'N/A'}
@@ -575,7 +629,11 @@ const BookReader = () => {
     Please answer the new question taking into account the context of the book, current section, and previous conversation.`;
 
             const response = await claudeService.askQuestion(contextualPrompt, context);
-            setChatMessages([...chatMessages, { text: message, response: response }]);
+            const updatedMessages = [...chatMessages, { text: message, response: response }];
+            setChatMessages(updatedMessages);
+
+            // Save updated messages to local storage - ADDED FROM PASTE 2
+            saveChatsToLocalStorage(updatedMessages, currentUrl);
         } catch (error) {
             console.error('Error sending message:', error);
         }
@@ -602,19 +660,20 @@ const BookReader = () => {
     const handleModernizeSelection = async () => {
         try {
             setIsModernizing(true);
-            
+
             // Close other panels and open modernize panel
             setIsExplanationPanelOpen(false);
+            setShowExplanation(false); // ADDED FROM PASTE 2
             setIsHistoricalContextOpen(false);
             setIsPanelOpen(true);
-            
+
             // Update CSS classes for layout
             const container = document.querySelector('.book-reader-container');
             if (container) {
                 container.classList.remove('with-explanation', 'with-historical-context');
                 container.classList.add('with-panel');
             }
-            
+
             const modernizedText = await claudeService.modernizeText(selectedText);
             setModernizedContent(modernizedText);
             setSelectedText('');
@@ -638,6 +697,8 @@ const BookReader = () => {
             const startUrl = `${book.baseUrl}/${book.urlName}.i.html`;
             setCurrentUrl(startUrl);
             loadContent(startUrl);
+            // Load saved chats for the initial section - ADDED FROM PASTE 2
+            loadSavedChats(startUrl);
         }
     }, [isPdf, pdfUrl, book]);
 
@@ -717,43 +778,46 @@ const BookReader = () => {
                         {error}
                     </div>
                 )}
-    
-                <div className="book-content">
-                    {isPdf ? (
-                        <div className="pdf-container">
-                            <iframe 
-                                src={pdfUrl}
-                                width="100%" 
-                                height="800px" 
-                                style={{ border: 'none' }}
-                                title="PDF Viewer"
-                                onLoad={() => {
-                                    console.log("PDF iframe loaded");
-                                    setLoading(false);
-                                }}
+
+                {/* Added conditional rendering from paste 2 */}
+                {!loading && !error && content && (
+                    <div className="book-content">
+                        {isPdf ? (
+                            <div className="pdf-container">
+                                <iframe
+                                    src={pdfUrl}
+                                    width="100%"
+                                    height="800px"
+                                    style={{ border: 'none' }}
+                                    title="PDF Viewer"
+                                    onLoad={() => {
+                                        console.log("PDF iframe loaded");
+                                        setLoading(false);
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div
+                                className="content-container"
+                                dangerouslySetInnerHTML={{ __html: content }}
                             />
-                        </div>
-                    ) : (
-                        <div
-                            className="content-container"
-                            dangerouslySetInnerHTML={{ __html: content }}
-                        />
-                    )}
-                    {selectionPosition && selectedText && (
-                        <div
-                            className="selection-toolbar"
-                            style={{
-                                position: 'absolute',
-                                top: `${selectionPosition.top - 40}px`,
-                                left: `${selectionPosition.left}px`
-                            }}
-                        >
-                            <button onClick={handleModernizeSelection}>Modernize Selection</button>
-                            <button onClick={handleExplainText}>Explain Selection</button>
-                        </div>
-                    )}
-                </div>
-    
+                        )}
+                        {selectionPosition && selectedText && (
+                            <div
+                                className="selection-toolbar"
+                                style={{
+                                    position: 'absolute',
+                                    top: `${selectionPosition.top - 40}px`,
+                                    left: `${selectionPosition.left}px`
+                                }}
+                            >
+                                <button onClick={handleModernizeSelection}>Modernize Selection</button>
+                                <button onClick={handleExplainText}>Explain Selection</button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className="navigation-controls bottom">
                     <button
                         onClick={handlePreviousSection}
@@ -766,10 +830,10 @@ const BookReader = () => {
                         <button
                             className="quiz-button"
                             onClick={() => navigate(`/quiz?section=${getCurrentSection()}`, {
-                                state: { 
+                                state: {
                                     content: content,
                                     bookTitle: book.title,
-                                    author: book.author 
+                                    author: book.author
                                 }
                             })}
                         >

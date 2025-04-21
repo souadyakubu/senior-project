@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const ChatBox = ({ onSendMessage, claudeService, messages, bookContext }) => {
+const ChatBox = ({ onSendMessage, messages, bookContext }) => {
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
@@ -99,12 +99,14 @@ const ChatBox = ({ onSendMessage, claudeService, messages, bookContext }) => {
             backgroundColor: '#f9f9f9',
             borderTop: '1px solid #e0e0e0',
         },
-        input: {
+        textarea: {
             flex: 1,
             padding: '8px 12px',
             border: '1px solid #ddd',
             borderRadius: '20px',
             outline: 'none',
+            resize: 'none',
+            fontFamily: 'inherit',
         },
         button: {
             backgroundColor: '#4a90e2',
@@ -115,33 +117,51 @@ const ChatBox = ({ onSendMessage, claudeService, messages, bookContext }) => {
             marginLeft: '10px',
             cursor: 'pointer',
         },
+        disabledButton: {
+            backgroundColor: '#cccccc',
+            cursor: 'not-allowed',
+        },
         loadingMessage: {
             alignSelf: 'center',
             fontStyle: 'italic',
             color: '#888',
+            margin: '10px 0',
         },
+        noMessages: {
+            textAlign: 'center',
+            color: '#888',
+            margin: '20px 0',
+        }
     };
 
     return (
         <div style={styles.chatboxContainer}>
-            <div style={styles.chatHeader}>
-                <h3>{bookContext.title} by {bookContext.author}</h3>
-                <p>Section: {bookContext.currentSection}</p>
-            </div>
+            {bookContext && (
+                <div style={styles.chatHeader}>
+                    <h3>{bookContext.title} by {bookContext.author}</h3>
+                    <p>Section: {bookContext.currentSection}</p>
+                </div>
+            )}
             <div style={styles.chatMessages}>
-                {messages.map((msg, index) => (
-                    <React.Fragment key={index}>
-                        <div style={{ ...styles.message, ...styles.userMessage }}>
-                            <p><strong>You:</strong> {msg.text}</p>
-                        </div>
-                        {msg.response && (
-                            <div style={{ ...styles.message, ...styles.botMessage }}>
-                                <p><strong>AI:</strong> {msg.response}</p>
+                {messages && messages.length > 0 ? (
+                    messages.map((msg, index) => (
+                        <React.Fragment key={index}>
+                            <div style={{ ...styles.message, ...styles.userMessage }}>
+                                <p><strong>You:</strong> {msg.text}</p>
                             </div>
-                        )}
-                        {index < messages.length - 1 && <div style={styles.separator} />}
-                    </React.Fragment>
-                ))}
+                            {msg.response && (
+                                <div style={{ ...styles.message, ...styles.botMessage }}>
+                                    <p><strong>AI:</strong> {msg.response}</p>
+                                </div>
+                            )}
+                            {index < messages.length - 1 && <div style={styles.separator} />}
+                        </React.Fragment>
+                    ))
+                ) : (
+                    <div style={styles.noMessages}>
+                        <p>Ask me questions about this book!</p>
+                    </div>
+                )}
                 {isLoading && (
                     <div style={styles.loadingMessage} ref={loadingMessageRef}>
                         <p>AI is thinking...</p>
@@ -150,15 +170,24 @@ const ChatBox = ({ onSendMessage, claudeService, messages, bookContext }) => {
                 <div ref={messagesEndRef} />
             </div>
             <div style={styles.chatInput}>
-                <input
-                    type="text"
+                <textarea
                     value={inputText}
                     onChange={handleInputChange}
                     onKeyPress={handleKeyPress}
-                    placeholder="Type your question here..."
-                    style={styles.input}
+                    placeholder="Ask a question about this book..."
+                    rows={2}
+                    style={styles.textarea}
                 />
-                <button onClick={handleSendMessage} style={styles.button}>Send</button>
+                <button
+                    onClick={handleSendMessage}
+                    style={{
+                        ...styles.button,
+                        ...(isLoading || !inputText.trim() ? styles.disabledButton : {})
+                    }}
+                    disabled={isLoading || !inputText.trim()}
+                >
+                    Send
+                </button>
             </div>
         </div>
     );
