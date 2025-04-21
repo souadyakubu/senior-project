@@ -7,7 +7,6 @@ import OpenAIService from '../services/openAIService';
 import ClaudeService from '../services/claudeService';
 import ChatBox from './ChatBox';
 
-
 // Import PDF.js directly for text extraction only
 import * as pdfjs from 'pdfjs-dist';
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -182,7 +181,7 @@ const BookReader = () => {
     const [isExplaining, setIsExplaining] = useState(false);
     const [contextInfo, setContextInfo] = useState('');
     const [isLoadingContext, setIsLoadingContext] = useState(false);
-    const [showExplanation, setShowExplanation] = useState(false); // Added from paste 2
+    const [showExplanation, setShowExplanation] = useState(false);
 
     // Selection state
     const [selectedText, setSelectedText] = useState('');
@@ -203,39 +202,72 @@ const BookReader = () => {
         }
     }, [isCCELSearch, ccelBook]);
 
-    // Helper function to get next Roman numeral (existing code)
+    // Enhanced PDF handling useEffect
+    useEffect(() => {
+        if (isPdf && pdfUrl) {
+            setLoading(true);
+            console.log("PDF mode activated with URL:", pdfUrl);
+            console.log("PDF file name:", pdfName);
+            
+            // Skip the URL testing that's causing errors and just proceed with text extraction
+            extractTextFromPdf().catch(err => {
+                console.error("Text extraction error:", err);
+            }).finally(() => {
+                // Set loading to false regardless of text extraction outcome
+                // This ensures the PDF will be displayed even if extraction fails
+                setTimeout(() => setLoading(false), 500);
+            });
+        }
+    }, [isPdf, pdfUrl, pdfName]);
+
+    // Helper function to get next Roman numeral
     const getNextRomanNumeral = (current) => {
         const romanNumerals = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
         const currentIndex = romanNumerals.indexOf(current);
         return currentIndex < romanNumerals.length - 1 ? romanNumerals[currentIndex + 1] : null;
     };
 
-    // PDF text extraction - simplified to avoid errors
+    // Enhanced PDF text extraction function
     const extractTextFromPdf = async () => {
         try {
             console.log("Attempting to extract text from PDF page", pageNumber);
-            // Only try to extract text if we have a valid PDF URL
             if (!pdfUrl) {
                 console.error("No PDF URL provided");
                 return;
             }
 
-            const loadingTask = pdfjs.getDocument(pdfUrl);
-            const pdf = await loadingTask.promise;
-            // Get total pages if not set
-            if (!numPages) {
-                setNumPages(pdf.numPages);
-            }
-            const page = await pdf.getPage(pageNumber);
-            const textContent = await page.getTextContent();
-            const text = textContent.items.map(item => item.str).join(' ');
-            console.log("Extracted text length:", text.length);
-            setPdfText(text);
-            setContent(text);
+            // Set a timeout to prevent hanging if PDF.js fails
+            const extractionPromise = new Promise(async (resolve, reject) => {
+                try {
+                    const loadingTask = pdfjs.getDocument(pdfUrl);
+                    const pdf = await loadingTask.promise;
+                    
+                    // Get total pages
+                    setNumPages(pdf.numPages);
+                    
+                    const page = await pdf.getPage(pageNumber);
+                    const textContent = await page.getTextContent();
+                    const text = textContent.items.map(item => item.str).join(' ');
+                    
+                    console.log("Extracted text length:", text.length);
+                    setPdfText(text);
+                    setContent(text);
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                }
+            });
+            
+            // Set a timeout for extraction
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("PDF text extraction timed out")), 10000);
+            });
+            
+            await Promise.race([extractionPromise, timeoutPromise]);
         } catch (err) {
             console.error('Error extracting text from PDF:', err);
-            // Don't set error state to avoid breaking the UI
             setPdfText("Text extraction failed. You can still view the PDF but modernization features may be limited.");
+            // Don't set loading to false here to allow the iframe to load
         }
     };
 
@@ -362,14 +394,14 @@ const BookReader = () => {
         }
     };
 
-    // Generate a unique storage key for chat messages - ADDED FROM PASTE 2
+    // Generate a unique storage key for chat messages
     const getChatStorageKey = (url) => {
         if (!url || !book) return null;
         const section = url.split('/').pop().replace('.html', '');
         return `chat_${book.title}_${section}`.replace(/\s+/g, '_').toLowerCase();
     };
 
-    // Load saved chat messages from localStorage - ADDED FROM PASTE 2
+    // Load saved chat messages from localStorage
     const loadSavedChats = (url) => {
         const storageKey = getChatStorageKey(url);
         if (!storageKey) return;
@@ -388,7 +420,7 @@ const BookReader = () => {
         }
     };
 
-    // Save chat messages to localStorage - ADDED FROM PASTE 2
+    // Save chat messages to localStorage
     const saveChatsToLocalStorage = (messages, url) => {
         const storageKey = getChatStorageKey(url);
         if (!storageKey) return;
@@ -413,7 +445,7 @@ const BookReader = () => {
                 setCurrentUrl(nextUrl);
                 await loadContent(nextUrl);
                 window.scrollTo(0, 0);
-                // Load saved chats for the new section - ADDED FROM PASTE 2
+                // Load saved chats for the new section
                 loadSavedChats(nextUrl);
             } else {
                 setIsLastPage(true);
@@ -434,7 +466,7 @@ const BookReader = () => {
                 setCurrentUrl(prevUrl);
                 await loadContent(prevUrl);
                 window.scrollTo(0, 0);
-                // Load saved chats for the previous section - ADDED FROM PASTE 2
+                // Load saved chats for the previous section
                 loadSavedChats(prevUrl);
             }
             setLoading(false);
@@ -459,7 +491,7 @@ const BookReader = () => {
         if (newPanelState) {
             setIsExplanationPanelOpen(false);
             setIsHistoricalContextOpen(false);
-            setShowExplanation(false); // ADDED FROM PASTE 2
+            setShowExplanation(false);
         }
 
         // Add/remove CSS class for layout adjustment
@@ -497,7 +529,7 @@ const BookReader = () => {
         }
     };
 
-    // Debug function to log selected text - ADDED FROM PASTE 2
+    // Debug function to log selected text
     const handleLogText = () => {
         const selection = window.getSelection();
         const text = selection.toString().trim();
@@ -518,7 +550,7 @@ const BookReader = () => {
             setIsPanelOpen(false);
             setIsHistoricalContextOpen(false);
             setIsExplanationPanelOpen(true);
-            setShowExplanation(true); // ADDED FROM PASTE 2
+            setShowExplanation(true);
 
             // Update CSS classes for layout
             const container = document.querySelector('.book-reader-container');
@@ -549,7 +581,7 @@ const BookReader = () => {
     // Function to close explanation panel
     const closeExplanationPanel = () => {
         setIsExplanationPanelOpen(false);
-        setShowExplanation(false); // ADDED FROM PASTE 2
+        setShowExplanation(false);
 
         // Remove CSS class
         const container = document.querySelector('.book-reader-container');
@@ -564,7 +596,7 @@ const BookReader = () => {
             // Close other panels and open historical context panel
             setIsPanelOpen(false);
             setIsExplanationPanelOpen(false);
-            setShowExplanation(false); // ADDED FROM PASTE 2
+            setShowExplanation(false);
             setIsHistoricalContextOpen(true);
 
             // Update CSS classes for layout
@@ -632,7 +664,7 @@ const BookReader = () => {
             const updatedMessages = [...chatMessages, { text: message, response: response }];
             setChatMessages(updatedMessages);
 
-            // Save updated messages to local storage - ADDED FROM PASTE 2
+            // Save updated messages to local storage
             saveChatsToLocalStorage(updatedMessages, currentUrl);
         } catch (error) {
             console.error('Error sending message:', error);
@@ -663,7 +695,7 @@ const BookReader = () => {
 
             // Close other panels and open modernize panel
             setIsExplanationPanelOpen(false);
-            setShowExplanation(false); // ADDED FROM PASTE 2
+            setShowExplanation(false);
             setIsHistoricalContextOpen(false);
             setIsPanelOpen(true);
 
@@ -697,7 +729,7 @@ const BookReader = () => {
             const startUrl = `${book.baseUrl}/${book.urlName}.i.html`;
             setCurrentUrl(startUrl);
             loadContent(startUrl);
-            // Load saved chats for the initial section - ADDED FROM PASTE 2
+            // Load saved chats for the initial section
             loadSavedChats(startUrl);
         }
     }, [isPdf, pdfUrl, book]);
@@ -779,29 +811,34 @@ const BookReader = () => {
                     </div>
                 )}
 
-                {/* Added conditional rendering from paste 2 */}
                 {!loading && !error && content && (
                     <div className="book-content">
                         {isPdf ? (
-                            <div className="pdf-container">
-                                <iframe
-                                    src={pdfUrl}
-                                    width="100%"
-                                    height="800px"
-                                    style={{ border: 'none' }}
-                                    title="PDF Viewer"
-                                    onLoad={() => {
-                                        console.log("PDF iframe loaded");
-                                        setLoading(false);
-                                    }}
-                                />
-                            </div>
-                        ) : (
-                            <div
-                                className="content-container"
-                                dangerouslySetInnerHTML={{ __html: content }}
-                            />
-                        )}
+    <div className="pdf-container">
+        {pdfUrl ? (
+            <iframe
+                src={pdfUrl}
+                width="100%"
+                height="800px"
+                style={{ border: 'none' }}
+                title="PDF Viewer"
+                onLoad={() => {
+                    console.log("PDF iframe loaded successfully");
+                    setLoading(false);
+                }}
+            />
+        ) : (
+            <div className="error-message">
+                No PDF URL provided. Please go back and try uploading again.
+            </div>
+        )}
+    </div>
+) : (
+    <div
+        className="content-container"
+        dangerouslySetInnerHTML={{ __html: content }}
+    />
+)}
                         {selectionPosition && selectedText && (
                             <div
                                 className="selection-toolbar"

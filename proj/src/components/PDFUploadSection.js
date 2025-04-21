@@ -6,6 +6,49 @@ const PDFUploadSection = () => {
     const [fileError, setFileError] = useState("");
     const navigate = useNavigate();
 
+    /**
+     * Creates a more reliable blob URL by ensuring proper binary data handling
+     * @param {File} file - The PDF file to process
+     * @returns {Promise<string>} - A promise that resolves to the blob URL
+     */
+    const createReliableBlobUrl = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                try {
+                    // Ensure the file is read as binary data
+                    const arrayBuffer = event.target.result;
+                    
+                    // Create the blob with the correct MIME type
+                    const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+                    
+                    // Create and store the blob URL
+                    const blobUrl = URL.createObjectURL(blob);
+                    
+                    console.log("Created reliable blob URL:", blobUrl);
+                    
+                    // Store the URL to prevent garbage collection
+                    // This is important! The URL might get revoked if not stored properly
+                    window.pdfBlobUrls = window.pdfBlobUrls || {};
+                    window.pdfBlobUrls[file.name] = blobUrl;
+                    
+                    resolve(blobUrl);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            
+            reader.onerror = function(error) {
+                console.error("Error reading file:", error);
+                reject(error);
+            };
+            
+            // Read the file as an ArrayBuffer (binary data)
+            reader.readAsArrayBuffer(file);
+        });
+    };
+
     const handleFileUpload = (event) => {
         const file = event.target.files[0];
         
@@ -31,35 +74,26 @@ const PDFUploadSection = () => {
         }
     };
 
-    const handleReadPDF = () => {
+    const handleReadPDF = async () => {
         if (uploadedFile) {
-            // Use FileReader to ensure the file is fully loaded before creating a URL
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                // Create a Blob with proper MIME type
-                const blob = new Blob([e.target.result], { type: 'application/pdf' });
-                const blobUrl = URL.createObjectURL(blob);
+            try {
+                setFileError("");
                 
-                console.log("Created Blob URL:", blobUrl);
+                // Use the utility function to create a reliable blob URL
+                const blobUrl = await createReliableBlobUrl(uploadedFile);
                 
-                // Navigate to BookReader with the PDF file info
-                navigate(`/book/pdf-reader`, { 
+                // Navigate to the reader with the blob URL
+                navigate(`/book/pdf-${encodeURIComponent(uploadedFile.name)}`, { 
                     state: { 
                         pdfUrl: blobUrl,
                         fileName: uploadedFile.name,
                         isPdf: true
                     }
                 });
-            };
-            
-            reader.onerror = function(e) {
-                console.error("Error reading file:", e);
-                setFileError("Error processing the PDF file");
-            };
-            
-            // Read the file as an ArrayBuffer
-            reader.readAsArrayBuffer(uploadedFile);
+            } catch (error) {
+                console.error("Error creating PDF blob URL:", error);
+                setFileError("Failed to process PDF file. Please try again or use a different file.");
+            }
         }
     };
 

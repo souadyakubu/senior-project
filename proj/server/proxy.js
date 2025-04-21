@@ -148,13 +148,107 @@ app.get('/api/search-ccel', async (req, res) => {
             }
             
             const formattedResults = apiResults.map(book => {
-                // Extract title from snippets
+                // Extract a clean title
                 let title = 'Unknown Title';
-                if (book.snippets && (book.snippets.descriptor || book.snippets.text)) {
-                    title = (book.snippets.descriptor || book.snippets.text)
+                
+                // Known workID to title mappings
+                const knownTitles = {
+                    'institutes': "Institutes of the Christian Religion",
+                    'encycl3a': "Early Church Fathers - Ante-Nicene Fathers",
+                    'hcc3': "History of the Christian Church, Volume 3",
+                    'person': "Dictionary of Christian Biography and Literature",
+                    'decline': "History of the Decline and Fall of the Roman Empire",
+                    'practice': "The Practice of the Presence of God",
+                    'imitation': "The Imitation of Christ",
+                    'augustine-confessions': "Confessions of St. Augustine",
+                    'bunyan-pilgrim': "The Pilgrim's Progress",
+                    'aquinas-summa': "Summa Theologica",
+                    'foxe-martyrs': "Foxe's Book of Martyrs",
+                    'wesley-sermons': "Wesley's Sermons",
+                    'schaff': "History of the Christian Church"
+                };
+                
+                // First check if we have a known title for this workID
+                if (book.workID && knownTitles[book.workID]) {
+                    title = knownTitles[book.workID];
+                }
+                // If not in our known list, try to get a clean title from workID
+                else if (book.workID) {
+                    // Format workID into a readable title
+                    if (book.workID.match(/^[a-z0-9_]+$/i)) {
+                        // If it looks like an abbreviation/code (all lowercase with numbers)
+                        // Format it better
+                        if (book.authorID) {
+                            const authorName = book.authorID.charAt(0).toUpperCase() + book.authorID.slice(1);
+                            title = `${authorName}'s ${book.workID.toUpperCase().replace(/_/g, ' ')}`;
+                        } else {
+                            title = book.workID.toUpperCase().replace(/_/g, ' ');
+                        }
+                    } else {
+                        // Regular formatting
+                        title = book.workID.charAt(0).toUpperCase() + 
+                                book.workID.slice(1).replace(/_/g, ' ');
+                    }
+                    
+                    // Add specific descriptions based on patterns
+                    if (book.workID.toLowerCase().includes('calcom')) {
+                        // Handle Calvin's Commentaries format
+                        if (book.snippets && (book.snippets.descriptor || book.snippets.text)) {
+                            const rawText = (book.snippets.descriptor || book.snippets.text)
+                                .replace(/__/g, '') // Remove underscores around terms
+                                .replace(/_/g, '');  // Remove single underscores
+                            
+                            // Try to extract commentary subject
+                            if (rawText.toLowerCase().includes('commentary on')) {
+                                const match = rawText.match(/commentary on\s+([^.,;:]+)/i);
+                                if (match && match[1]) {
+                                    title = `Commentary on ${match[1].trim()}`;
+                                }
+                            } else if (rawText.toLowerCase().includes('commentaries')) {
+                                title = "Calvin's Commentaries";
+                            }
+                        }
+                    }
+                }
+                // If we still don't have a good title, try to extract from snippets
+                else if (book.snippets && (book.snippets.descriptor || book.snippets.text)) {
+                    const rawText = (book.snippets.descriptor || book.snippets.text)
                         .replace(/__/g, '') // Remove underscores around terms
                         .replace(/_/g, '')  // Remove single underscores
                         .trim();
+                    
+                    // Look for a clear title pattern first
+                    let titleMatch = null;
+                    
+                    // For commentaries, get "Commentary on X"
+                    if (rawText.toLowerCase().includes('commentary on')) {
+                        titleMatch = rawText.match(/commentary on\s+([^.,;:]+)/i);
+                        if (titleMatch && titleMatch[1]) {
+                            title = `Commentary on ${titleMatch[1].trim()}`;
+                        }
+                    }
+                    // For books with clear quotes or titles
+                    else if (rawText.includes('"') && rawText.indexOf('"') < 30) {
+                        titleMatch = rawText.match(/"([^"]+)"/);
+                        if (titleMatch && titleMatch[1]) {
+                            title = titleMatch[1].trim();
+                        }
+                    }
+                    // If no clear pattern, extract the first sentence or phrase
+                    else {
+                        // Try to get the first sentence or phrase
+                        titleMatch = rawText.match(/^[^.,:;!?-]+/);
+                        if (titleMatch) {
+                            title = titleMatch[0].trim();
+                            // If still too long, cap it
+                            if (title.length > 50) {
+                                title = title.substring(0, 47) + '...';
+                            }
+                        } else {
+                            // If we can't match a clean phrase, use a limited portion
+                            title = rawText.length > 50 ? rawText.substring(0, 47) + '...' : rawText;
+                        }
+                    }
                 }
                 
                 // Extract author (capitalize first letter)
@@ -199,6 +293,14 @@ app.get('/api/search-ccel', async (req, res) => {
                 let specialType = '';
                 if (book.authorID === 'bible') {
                     specialType = 'bible';
+                }
+                
+                // For works with no discernible title, create a descriptive one
+                if (title === 'Unknown Title' && author !== 'Unknown Author') {
+                    title = `Work by ${author}`;
+                    if (workName) {
+                        title += `: ${workName}`;
+                    }
                 }
                 
                 const result = {
@@ -258,6 +360,17 @@ app.get('/api/search-ccel', async (req, res) => {
                 let title = el.find('.title, h2, h3, h4').first().text().trim();
                 if (!title) {
                     title = el.find('a[href*="/ccel/"]').first().text().trim();
+                }
+                
+                // Clean up title if it's too long
+                if (title && title.length > 50) {
+                    // Look for natural breakpoints
+                    const match = title.match(/^[^.,:;!?-]+/);
+                    if (match) {
+                        title = match[0].trim();
+                    } else {
+                        title = title.substring(0, 47) + '...';
+                    }
                 }
                 
                 // Extract URL
@@ -334,11 +447,22 @@ app.get('/api/search-ccel', async (req, res) => {
                 $('a[href*="/ccel/"]').each((index, element) => {
                     const el = $(element);
                     const url = el.attr('href');
-                    const title = el.text().trim();
+                    let title = el.text().trim();
                     
                     // Skip navigation links and other non-result links
                     if (!title || title.length < 5 || title.includes('Home') || title.includes('Menu')) {
                         return;
+                    }
+                    
+                    // Clean up title if it's too long
+                    if (title.length > 50) {
+                        // Try to extract a sensible title
+                        const match = title.match(/^[^.,:;!?-]+/);
+                        if (match) {
+                            title = match[0].trim();
+                        } else {
+                            title = title.substring(0, 47) + '...';
+                        }
                     }
                     
                     console.log(`Found potential result link: "${title}" at ${url}`);
