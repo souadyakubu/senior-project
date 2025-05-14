@@ -1,8 +1,7 @@
-# Project Name
+# Readers Tool
 
 ## Description
-
-A brief description of what your project does and what technologies it uses. (Feel free to replace this with your own summary.)
+The AI-based tool leverages language models to enhance reading comprehension by providing real-time explanations, modern language translations, and interactive learning features. Our solution helps bridge the gap between historical Christian texts and modern readers.
 
 ## Getting Started
 
