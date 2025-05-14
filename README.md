@@ -1,7 +1,7 @@
 # Readers Tool
 
 ## Description
-The AI-based tool leverages language models to enhance reading comprehension by providing real-time explanations, modern language translations, and interactive learning features. Our solution helps bridge the gap between historical Christian texts and modern readers.
+The AI-based tool leverages a language model (claude) to enhance reading comprehension by providing real-time explanations, modern language translations, and interactive learning features. Our solution helps bridge the gap between historical Christian texts and modern readers.
 
 ## Getting Started
 
