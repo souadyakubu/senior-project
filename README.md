@@ -22,7 +22,6 @@ git clone https://github.com/souadyakubu/senior-project.git
 cd proj
 
 # 2. Frontend Setup
-cd proj           # Navigate to the frontend directory
 npm install       # Install all frontend dependencies
 npm start         # Start the frontend development server
 
