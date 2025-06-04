@@ -9,7 +9,7 @@ Follow the steps below to run the project locally.
 
 ### Prerequisites
 
-- Node.js (v14 or higher recommended)
+- Node.js 
 - npm (comes with Node.js)
 
 ### Installation
@@ -18,8 +18,8 @@ Follow the steps below to run the project locally.
 
 ```
 # 1. Clone the Repository
-git clone <your-repo-url>
-cd <your-project-root>
+git clone https://github.com/souadyakubu/senior-project.git
+cd proj
 
 # 2. Frontend Setup
 cd proj           # Navigate to the frontend directory
